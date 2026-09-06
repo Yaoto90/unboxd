@@ -5,6 +5,7 @@ import { getMovieDetails, getImageUrl } from '../services/tmdb';
 import StarRating from './StarRating';
 import ReviewCard from './ReviewCard';
 import { X, Star, Bookmark, Send, Clock, Calendar, Share2, Check, Play, Eye } from 'lucide-react';
+import PersonDetailModal from './PersonDetailModal';
 
 export default function MovieDetailModal({ movieId, onClose }) {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const [reviews, setReviews] = useState([]);
   const [copied, setCopied] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
+  const [selectedPersonId, setSelectedPersonId] = useState(null);
 
   useEffect(() => {
     if (!movieId) return;
@@ -315,7 +317,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
           <div style={{ position: 'relative', zIndex: 1, padding: '4.5rem 5rem 5rem 5rem' }}>
             {/* Header Hero */}
             <div style={{ display: 'flex', gap: '3.5rem', alignItems: 'flex-start' }}>
-              {/* Scaled-up Poster */}
               <img
                 src={posterSrc}
                 alt={movie.title}
@@ -330,7 +331,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
               />
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Title and Release Year */}
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.2rem', flexWrap: 'wrap' }}>
                   <h1 style={{ margin: 0, fontSize: '3.2rem', fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.1 }}>
                     {movie.title}
@@ -342,11 +342,19 @@ export default function MovieDetailModal({ movieId, onClose }) {
 
                 {director && (
                   <p style={{ margin: '0.8rem 0 1.5rem 0', fontSize: '1.1rem', color: '#a3a3a3' }}>
-                    Directed by <span style={{ color: '#ffffff', fontWeight: 700 }}>{director}</span>
+                    Directed by{' '}
+                    <span
+                      onClick={() => {
+                        const dirObj = movie?.credits?.crew?.find((c) => c.job === 'Director');
+                        if (dirObj) setSelectedPersonId(dirObj.id);
+                      }}
+                      style={{ color: '#ffffff', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                    >
+                      {director}
+                    </span>
                   </p>
                 )}
 
-                {/* Badges and Metrics */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2rem', color: '#a3a3a3', fontSize: '1.02rem', marginBottom: '1.75rem' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#22c55e', fontWeight: 800, fontSize: '1.1rem' }}>
                     <Star size={18} fill="#22c55e" />
@@ -364,7 +372,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   </span>
                 </div>
 
-                {/* Genre Tags */}
                 <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
                   {movie.genres?.map((g) => (
                     <span
@@ -385,7 +392,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   ))}
                 </div>
 
-                {/* Action Button Stack */}
+                {/* Actions */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', width: 'fit-content', minWidth: '180px' }}>
                   <button
                     onClick={toggleWatched}
@@ -476,7 +483,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
               {movie.overview || 'No description available.'}
             </p>
 
-            {/* Scaled Cast Section */}
+            {/* Cast */}
             {topCast.length > 0 && (
               <div style={{ marginTop: '4rem' }}>
                 <span style={{ display: 'block', margin: '0 0 1.5rem 0', fontSize: '1rem', fontWeight: 800, color: '#888888', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
@@ -484,7 +491,11 @@ export default function MovieDetailModal({ movieId, onClose }) {
                 </span>
                 <div style={{ display: 'flex', gap: '2rem', overflowX: 'auto', paddingBottom: '1.25rem' }}>
                   {topCast.map((actor) => (
-                    <div key={actor.id} style={{ minWidth: '125px', maxWidth: '125px', textAlign: 'center', flexShrink: 0 }}>
+                    <div
+                      key={actor.id}
+                      onClick={() => setSelectedPersonId(actor.id)}
+                      style={{ minWidth: '125px', maxWidth: '125px', textAlign: 'center', flexShrink: 0, cursor: 'pointer' }}
+                    >
                       <div style={{ width: '104px', height: '104px', margin: '0 auto 0.85rem auto', borderRadius: '50%', overflow: 'hidden', background: '#121212', border: '2px solid #282828' }}>
                         {actor.profile_path ? (
                           <img src={getImageUrl(actor.profile_path, 'w185')} alt={actor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -502,7 +513,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
 
             <hr style={{ borderColor: '#1f1f1f', margin: '4rem 0' }} />
 
-            {/* Full-width Add Review Form */}
+            {/* Add Review Form */}
             <div style={{ marginBottom: '4.5rem', width: '100%' }}>
               <h3 style={{ margin: '0 0 1.75rem 0', fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
                 Add Review
@@ -565,7 +576,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
               )}
             </div>
 
-            {/* Full-width Reviews List */}
+            {/* Reviews List */}
             <div style={{ width: '100%' }}>
               <h3 style={{ margin: '0 0 2rem 0', fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
                 Reviews ({reviews.length})
@@ -661,6 +672,22 @@ export default function MovieDetailModal({ movieId, onClose }) {
               />
             </div>
           </div>
+        )}
+
+        {/* Independent Person Modal Overlay */}
+        {selectedPersonId && (
+          <PersonDetailModal
+            personId={selectedPersonId}
+            onClose={() => setSelectedPersonId(null)}
+            onSelectMovie={(newMovieId) => {
+              setSelectedPersonId(null);
+              onClose();
+              const url = new URL(window.location.href);
+              url.searchParams.set('movie', newMovieId);
+              window.history.pushState({}, '', url);
+              window.dispatchEvent(new Event('popstate'));
+            }}
+          />
         )}
       </div>
     </div>

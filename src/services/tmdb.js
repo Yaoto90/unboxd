@@ -242,3 +242,17 @@ export const getMovieDetails = async (movieId) => {
 export const getImageUrl = (path, size = 'w500') => {
   return path ? `https://image.tmdb.org/t/p/${size}${path}` : 'https://via.placeholder.com/500x750?text=No+Poster';
 };
+
+// Fetch person details (biography, birthday, place of birth)
+export async function getPersonDetails(personId) {
+  const res = await fetch(`${BASE_URL}/person/${personId}?language=en-US`, options);
+  if (!res.ok) throw new Error('Failed to fetch person details');
+  return res.json();
+}
+
+// Fetch person movie credits (cast & crew filmography)
+export async function getPersonMovieCredits(personId) {
+  const res = await fetch(`${BASE_URL}/person/${personId}/movie_credits?language=en-US`, options);
+  if (!res.ok) throw new Error('Failed to fetch person movie credits');
+  return res.json();
+}
