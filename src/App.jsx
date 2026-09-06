@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import MovieDetailModal from './components/MovieDetailModal';
+import AuthModal from './components/AuthModal';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import SearchBrowseModal from './components/SearchBrowseModal';
@@ -190,6 +191,7 @@ function HomeFeed({ onSelectMovie }) {
 
 function MainLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, initialMode: 'signin' });
   const selectedMovieId = searchParams.get('movie');
 
   const handleSelectMovie = (id) => {
@@ -208,9 +210,17 @@ function MainLayout() {
     });
   };
 
+  const handleOpenAuth = (mode = 'signin') => {
+    setAuthModalConfig({ isOpen: true, initialMode: mode });
+  };
+
+  const handleCloseAuth = () => {
+    setAuthModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main, #000000)', color: 'var(--text-pure, #ffffff)' }}>
-      <Navbar />
+      <Navbar onOpenAuth={handleOpenAuth} />
       <Routes>
         <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} />} />
         <Route path="/search" element={<SearchPage onSelectMovie={handleSelectMovie} />} />
@@ -221,6 +231,13 @@ function MainLayout() {
         movieId={selectedMovieId}
         onClose={handleCloseMovie}
       />
+      {authModalConfig.isOpen && (
+        <AuthModal
+          isOpen={authModalConfig.isOpen}
+          onClose={handleCloseAuth}
+          initialMode={authModalConfig.initialMode}
+        />
+      )}
     </div>
   );
 }
