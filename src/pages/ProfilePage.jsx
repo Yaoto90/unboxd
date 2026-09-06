@@ -7,7 +7,7 @@ import { User, Bookmark, Star, Trash2, Shield, ArrowLeft, Lock, KeyRound, ArrowU
 
 export default function ProfilePage({ onSelectMovie }) {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'watchlist' | 'reviewed'
   const [watchlist, setWatchlist] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -17,7 +17,7 @@ export default function ProfilePage({ onSelectMovie }) {
   // Profile Edit State
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
-  const [usernameStatus, setUsernameStatus] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState({ type: '', msg: '' });
 
   // Password Change State
   const [newPassword, setNewPassword] = useState('');
@@ -80,23 +80,67 @@ export default function ProfilePage({ onSelectMovie }) {
 
   const handleUpdateUsername = async (e) => {
     e.preventDefault();
-    if (!usernameInput.trim()) return;
+    const cleanUsername = usernameInput.trim();
+
+    if (!cleanUsername) {
+      setUsernameStatus({ type: 'error', msg: 'Username cannot be empty.' });
+      return;
+    }
+
+    if (cleanUsername.length < 3) {
+      setUsernameStatus({ type: 'error', msg: 'Username must be at least 3 characters.' });
+      return;
+    }
+
+    // No changes made
+    if (cleanUsername.toLowerCase() === (profile?.username || '').toLowerCase()) {
+      setUsernameStatus({ type: 'success', msg: 'Username is unchanged.' });
+      setTimeout(() => setUsernameStatus({ type: '', msg: '' }), 3000);
+      return;
+    }
 
     setSavingUsername(true);
-    setUsernameStatus('');
+    setUsernameStatus({ type: '', msg: '' });
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ username: usernameInput.trim() })
-      .eq('id', user.id);
+    try {
+      // 1. Availability pre-check (excluding the active user)
+      const { data: existing, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('username', cleanUsername)
+        .neq('id', user.id)
+        .maybeSingle();
 
-    if (!error) {
-      setUsernameStatus('Name updated successfully');
-      setTimeout(() => setUsernameStatus(''), 3000);
-    } else {
-      setUsernameStatus(error.message);
+      if (checkError) throw checkError;
+
+      if (existing) {
+        setUsernameStatus({ type: 'error', msg: 'This username is already taken. Please choose another.' });
+        setSavingUsername(false);
+        return;
+      }
+
+      // 2. Perform the update
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ username: cleanUsername })
+        .eq('id', user.id);
+
+      if (updateError) {
+        if (updateError.code === '23505') {
+          throw new Error('This username is already taken. Please choose another.');
+        }
+        throw updateError;
+      }
+
+      // 3. Sync AuthContext state
+      await refreshProfile();
+      setUsernameStatus({ type: 'success', msg: 'Username updated successfully.' });
+      setTimeout(() => setUsernameStatus({ type: '', msg: '' }), 3000);
+    } catch (err) {
+      setUsernameStatus({ type: 'error', msg: err.message || 'Failed to update username.' });
+    } finally {
+      setSavingUsername(false);
     }
-    setSavingUsername(false);
   };
 
   const handleUpdatePassword = async (e) => {
@@ -317,7 +361,6 @@ export default function ProfilePage({ onSelectMovie }) {
       {loading ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '4rem' }}>Loading records...</p>
       ) : activeTab === 'profile' ? (
-        /* SECTION 1: PROFILE, CHANGE NAME & PASSWORD */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', maxWidth: '850px' }}>
           
           {/* Change Display Name */}
@@ -350,9 +393,9 @@ export default function ProfilePage({ onSelectMovie }) {
                 />
               </div>
 
-              {usernameStatus && (
-                <p style={{ margin: 0, fontSize: '0.8rem', color: usernameStatus.includes('successfully') ? '#22c55e' : '#ef4444' }}>
-                  {usernameStatus}
+              {usernameStatus.msg && (
+                <p style={{ margin: 0, fontSize: '0.8rem', color: usernameStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>
+                  {usernameStatus.msg}
                 </p>
               )}
 
@@ -439,7 +482,6 @@ export default function ProfilePage({ onSelectMovie }) {
 
         </div>
       ) : activeTab === 'watchlist' ? (
-        /* SECTION 2: WATCHLIST */
         watchlist.length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '4rem' }}>Your watchlist is empty.</p>
         ) : (
@@ -482,13 +524,11 @@ export default function ProfilePage({ onSelectMovie }) {
           </div>
         )
       ) : (
-        /* SECTION 3: REVIEWED (WITH SORT BAR) */
         <div>
           {reviews.length === 0 ? (
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '4rem' }}>No reviews written yet.</p>
           ) : (
             <>
-              {/* Sorting Bar */}
               <div style={{
                 display: 'flex',
                 justifyContent: 'flex-end',
@@ -521,7 +561,6 @@ export default function ProfilePage({ onSelectMovie }) {
                 </div>
               </div>
 
-              {/* Grid of Reviewed Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.25rem' }}>
                 {sortedReviews.map((rev) => (
                   <div
@@ -540,7 +579,6 @@ export default function ProfilePage({ onSelectMovie }) {
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
                   >
-                    {/* Movie Poster */}
                     <div style={{ width: '80px', flexShrink: 0, aspectRatio: '2/3', borderRadius: '6px', overflow: 'hidden', background: '#18181b', border: '1px solid var(--border-subtle)' }}>
                       <img
                         src={getImageUrl(rev.movie_poster_path, 'w185')}
@@ -549,7 +587,6 @@ export default function ProfilePage({ onSelectMovie }) {
                       />
                     </div>
 
-                    {/* Review Body */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.4rem' }}>
                         <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -565,7 +602,6 @@ export default function ProfilePage({ onSelectMovie }) {
                         </button>
                       </div>
 
-                      {/* Rating Stars */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginBottom: '0.6rem' }}>
                         {[...Array(5)].map((_, i) => (
                           <Star
@@ -580,7 +616,6 @@ export default function ProfilePage({ onSelectMovie }) {
                         </span>
                       </div>
 
-                      {/* Review Text */}
                       <p style={{
                         margin: 0,
                         fontSize: '0.85rem',

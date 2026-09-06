@@ -19,11 +19,24 @@ export default function AuthModal({ isOpen, onClose }) {
 
     try {
       if (isSignUp) {
+        const cleanUsername = username.trim();
+
+        // Check if username is already claimed
+        const { data: existing } = await supabase
+          .from('profiles')
+          .select('id')
+          .ilike('username', cleanUsername)
+          .maybeSingle();
+
+        if (existing) {
+          throw new Error('This username is already taken. Please choose another.');
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { user_name: username }
+            data: { user_name: cleanUsername }
           }
         });
         if (error) throw error;
@@ -72,7 +85,7 @@ export default function AuthModal({ isOpen, onClose }) {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #333' }}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #333', background: '#0a0a0a', color: '#fff' }}
             />
           )}
           <input
@@ -81,7 +94,7 @@ export default function AuthModal({ isOpen, onClose }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #333' }}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #333', background: '#0a0a0a', color: '#fff' }}
           />
           <input
             type="password"
@@ -89,7 +102,7 @@ export default function AuthModal({ isOpen, onClose }) {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #333' }}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #333', background: '#0a0a0a', color: '#fff' }}
           />
           <button
             type="submit"
@@ -106,7 +119,10 @@ export default function AuthModal({ isOpen, onClose }) {
         <p style={{ marginTop: '1rem', fontSize: '0.85rem', textAlign: 'center' }}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <span
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setErrorMsg('');
+            }}
             style={{ color: '#00e054', cursor: 'pointer', textDecoration: 'underline' }}
           >
             {isSignUp ? 'Log in' : 'Sign up'}
