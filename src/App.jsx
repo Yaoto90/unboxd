@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import MovieDetailModal from './components/MovieDetailModal';
 import AuthModal from './components/AuthModal';
@@ -16,10 +16,10 @@ import {
   getUpcomingMovies,
   getImageUrl
 } from './services/tmdb';
-import { Star, Search, Flame, Film, Clock, MessageSquareQuote } from 'lucide-react';
+import { Star, Search, Flame, Film, Clock, MessageSquareQuote, Bookmark } from 'lucide-react';
 import PublicProfilePage from './pages/PublicProfilePage';
 
-function MovieCard({ movie, onSelect }) {
+function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
   const [isHovered, setIsHovered] = useState(false);
   if (!movie) return null;
 
@@ -36,7 +36,8 @@ function MovieCard({ movie, onSelect }) {
         border: `1px solid ${isHovered ? '#383838' : '#1e1e1e'}`,
         transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease',
         transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: isHovered ? '0 10px 25px rgba(0, 0, 0, 0.65)' : 'none'
+        boxShadow: isHovered ? '0 10px 25px rgba(0, 0, 0, 0.65)' : 'none',
+        position: 'relative'
       }}
     >
       <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', overflow: 'hidden', background: '#121212' }}>
@@ -52,6 +53,40 @@ function MovieCard({ movie, onSelect }) {
             transform: isHovered ? 'scale(1.02)' : 'scale(1)'
           }}
         />
+
+        {/* Quick-Watchlist Button: Visible strictly on hover */}
+        {onToggleWatchlist && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleWatchlist(movie);
+            }}
+            title={isWatchlisted ? 'Remove from Watchlist' : 'Add to Watchlist'}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              background: isWatchlisted ? '#ffffff' : 'rgba(10, 10, 10, 0.85)',
+              border: `1px solid ${isWatchlisted ? '#ffffff' : '#262626'}`,
+              color: isWatchlisted ? '#000000' : '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: isHovered ? 1 : 0,
+              transform: isHovered ? 'scale(1)' : 'scale(0.85)',
+              pointerEvents: isHovered ? 'auto' : 'none',
+              transition: 'opacity 0.15s ease, transform 0.15s ease, background 0.15s ease',
+              backdropFilter: 'blur(4px)',
+              zIndex: 10
+            }}
+          >
+            <Bookmark size={14} fill={isWatchlisted ? '#000000' : 'none'} />
+          </button>
+        )}
       </div>
 
       <div style={{ padding: '0.75rem 0.85rem' }}>
@@ -80,13 +115,38 @@ function MovieCard({ movie, onSelect }) {
   );
 }
 
-function HomeFeed({ onSelectMovie }) {
+function HomeFeed({ onSelectMovie, onOpenAuth }) {
+  const { user } = useAuth();
   const [activeFeed, setActiveFeed] = useState('trending'); // 'trending' | 'top_rated' | 'now_playing' | 'upcoming'
   const [movies, setMovies] = useState([]);
+  const [watchlistIds, setWatchlistIds] = useState(new Set());
   const [recentReviews, setRecentReviews] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Fetch active watchlist for current user
+  useEffect(() => {
+    async function loadWatchlist() {
+      if (!user) {
+        setWatchlistIds(new Set());
+        return;
+      }
+      try {
+        const { data } = await supabase
+          .from('watchlists')
+          .select('tmdb_movie_id')
+          .eq('user_id', user.id);
+
+        if (data) {
+          setWatchlistIds(new Set(data.map((item) => Number(item.tmdb_movie_id))));
+        }
+      } catch (err) {
+        console.error('Failed to load watchlist:', err);
+      }
+    }
+    loadWatchlist();
+  }, [user]);
 
   // Fetch community reviews once on mount
   useEffect(() => {
@@ -132,6 +192,52 @@ function HomeFeed({ onSelectMovie }) {
 
     loadFeed();
   }, [activeFeed]);
+
+  // Toggle watchlist logic
+  const handleToggleWatchlist = async (movie) => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('signin');
+      return;
+    }
+
+    const movieId = Number(movie.id);
+    const isSaved = watchlistIds.has(movieId);
+
+    // Optimistic UI update
+    setWatchlistIds((prev) => {
+      const next = new Set(prev);
+      if (isSaved) next.delete(movieId);
+      else next.add(movieId);
+      return next;
+    });
+
+    try {
+      if (isSaved) {
+        await supabase
+          .from('watchlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('tmdb_movie_id', movieId);
+      } else {
+        await supabase.from('watchlists').insert({
+          user_id: user.id,
+          tmdb_movie_id: movieId,
+          movie_title: movie.title,
+          movie_poster_path: movie.poster_path,
+          type: 'watchlist'
+        });
+      }
+    } catch (err) {
+      console.error('Error toggling watchlist:', err);
+      // Revert state if request fails
+      setWatchlistIds((prev) => {
+        const next = new Set(prev);
+        if (isSaved) next.add(movieId);
+        else next.delete(movieId);
+        return next;
+      });
+    }
+  };
 
   const feedTabs = [
     { id: 'trending', label: 'Trending', icon: Flame },
@@ -231,6 +337,8 @@ function HomeFeed({ onSelectMovie }) {
               key={movie.id}
               movie={movie}
               onSelect={onSelectMovie}
+              isWatchlisted={watchlistIds.has(Number(movie.id))}
+              onToggleWatchlist={handleToggleWatchlist}
             />
           ))}
         </div>
@@ -297,7 +405,7 @@ function MainLayout() {
     <div style={{ minHeight: '100vh', backgroundColor: '#000000', color: '#ffffff' }}>
       <Navbar onOpenAuth={handleOpenAuth} />
       <Routes>
-        <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} />} />
+        <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} onOpenAuth={handleOpenAuth} />} />
         <Route path="/search" element={<SearchPage onSelectMovie={handleSelectMovie} />} />
         <Route path="/profile" element={<ProfilePage onSelectMovie={handleSelectMovie} />} />
         <Route path="/user/:username" element={<PublicProfilePage onSelectMovie={handleSelectMovie} />} />
