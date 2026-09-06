@@ -148,7 +148,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
     loadWatchlist();
   }, [user]);
 
-  // Fetch community reviews once on mount
+  // Fetch strictly 6 community reviews with avatar_url included
   useEffect(() => {
     async function loadCommunityReviews() {
       try {
@@ -344,7 +344,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
         </div>
       )}
 
-      {/* Community Review Feed */}
+      {/* Community Review Feed (Strictly 6 Cards in Grid) */}
       {!loading && recentReviews.length > 0 && (
         <div style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid #1e1e1e' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
@@ -354,13 +354,18 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.25rem' }}>
-            {recentReviews.map((rev) => (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+            gap: '1.25rem'
+          }}>
+            {recentReviews.slice(0, 6).map((rev) => (
               <ReviewCard
                 key={rev.id}
                 review={rev}
                 onSelectMovie={onSelectMovie}
                 showMoviePoster={true}
+                onOpenAuth={onOpenAuth}
               />
             ))}
           </div>
@@ -377,10 +382,15 @@ function MainLayout() {
   const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, initialMode: 'signin' });
   const selectedMovieId = searchParams.get('movie');
 
-  const handleSelectMovie = (id) => {
+  const handleSelectMovie = (id, reviewId = null) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('movie', id.toString());
+      if (reviewId) {
+        next.set('review', reviewId.toString());
+      } else {
+        next.delete('review');
+      }
       return next;
     });
   };
@@ -389,6 +399,7 @@ function MainLayout() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.delete('movie');
+      next.delete('review');
       return next;
     });
   };

@@ -21,6 +21,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
 
+  // 1. Primary Data Fetching Effect
   useEffect(() => {
     if (!movieId) return;
 
@@ -59,6 +60,32 @@ export default function MovieDetailModal({ movieId, onClose }) {
 
     loadData();
   }, [movieId, user]);
+
+  // 2. Auto-scroll to review if ?review=<id> is in URL (Hook must sit at component level)
+  useEffect(() => {
+    if (loading || reviews.length === 0) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const targetReviewId = params.get('review');
+    if (!targetReviewId) return;
+
+    const timer = setTimeout(() => {
+      const targetElement = document.getElementById(`review-${targetReviewId}`);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetElement.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease';
+        targetElement.style.borderColor = '#38bdf8';
+        targetElement.style.boxShadow = '0 0 24px rgba(56, 189, 248, 0.35)';
+
+        setTimeout(() => {
+          targetElement.style.borderColor = 'transparent';
+          targetElement.style.boxShadow = 'none';
+        }, 2200);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [loading, reviews]);
 
   const handleShare = async () => {
     const url = new URL(window.location.href);
@@ -576,7 +603,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
               )}
             </div>
 
-            {/* Reviews List */}
+            {/* Reviews List with target element id */}
             <div style={{ width: '100%' }}>
               <h3 style={{ margin: '0 0 2rem 0', fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
                 Reviews ({reviews.length})
@@ -587,13 +614,23 @@ export default function MovieDetailModal({ movieId, onClose }) {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', width: '100%' }}>
                   {reviews.map((rev) => (
-                    <ReviewCard
+                    <div
                       key={rev.id}
-                      review={rev}
-                      onDelete={handleDeleteReview}
-                      showMoviePoster={false}
-                      onCloseModal={onClose}
-                    />
+                      id={`review-${rev.id}`}
+                      style={{
+                        width: '100%',
+                        borderRadius: '16px',
+                        border: '1px solid transparent',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <ReviewCard
+                        review={rev}
+                        onDelete={handleDeleteReview}
+                        showMoviePoster={false}
+                        onCloseModal={onClose}
+                      />
+                    </div>
                   ))}
                 </div>
               )}

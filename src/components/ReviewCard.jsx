@@ -70,11 +70,19 @@ export default function ReviewCard({
     }
   };
 
+  // Resolve profiles object whether Supabase returns an object or a 1-item array
+  const profileData = Array.isArray(review.profiles)
+    ? review.profiles[0]
+    : review.profiles || {};
+
+  const username = profileData.username || review.username || 'user';
+  const avatarUrl = profileData.avatar_url || review.avatar_url || null;
+  const initial = username.charAt(0).toUpperCase();
+
   const handleUserClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const username = review.profiles?.username;
-    if (username) {
+    if (username && username !== 'user') {
       if (typeof onCloseModal === 'function') {
         onCloseModal();
       }
@@ -82,19 +90,16 @@ export default function ReviewCard({
     }
   };
 
-  const username = review.profiles?.username || 'user';
-  const initial = username.charAt(0).toUpperCase();
-
   return (
     <div
-      onClick={() => onSelectMovie && onSelectMovie(review.tmdb_movie_id)}
+      onClick={() => onSelectMovie && onSelectMovie(review.tmdb_movie_id, review.id)}
       style={{
         background: '#0d0d0d',
-        border: '1px solid #242424',
-        borderRadius: '16px',
-        padding: '2rem 2.25rem',
+        border: '1px solid #222222',
+        borderRadius: showMoviePoster ? '10px' : '16px',
+        padding: showMoviePoster ? '0.85rem 1rem' : '2rem 2.25rem',
         display: 'flex',
-        gap: '1.75rem',
+        gap: showMoviePoster ? '0.9rem' : '1.75rem',
         cursor: onSelectMovie ? 'pointer' : 'default',
         transition: 'border-color 0.15s ease, transform 0.15s ease',
         width: '100%',
@@ -102,23 +107,33 @@ export default function ReviewCard({
       }}
       onMouseEnter={(e) => {
         if (onSelectMovie) {
-          e.currentTarget.style.borderColor = '#404040';
+          e.currentTarget.style.borderColor = '#383838';
           e.currentTarget.style.transform = 'translateY(-2px)';
         }
       }}
       onMouseLeave={(e) => {
         if (onSelectMovie) {
-          e.currentTarget.style.borderColor = '#242424';
+          e.currentTarget.style.borderColor = '#222222';
           e.currentTarget.style.transform = 'translateY(0)';
         }
       }}
     >
-      {/* Movie Poster (When shown in community feed) */}
+      {/* Movie Poster */}
       {showMoviePoster && review.movie_poster_path && (
-        <div style={{ width: '95px', height: '142px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, background: '#141414', border: '1px solid #242424' }}>
+        <div
+          style={{
+            width: '56px',
+            height: '84px',
+            borderRadius: '6px',
+            overflow: 'hidden',
+            flexShrink: 0,
+            background: '#141414',
+            border: '1px solid #222222'
+          }}
+        >
           <img
             src={getImageUrl(review.movie_poster_path, 'w185')}
-            alt={review.movie_title}
+            alt={review.movie_title || 'Film'}
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         </div>
@@ -128,54 +143,75 @@ export default function ReviewCard({
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
           {showMoviePoster && (
-            <h4 style={{
-              margin: '0 0 0.6rem 0',
-              fontSize: '1.3rem',
-              fontWeight: 800,
-              color: '#ffffff',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
+            <h4
+              style={{
+                margin: '0 0 0.35rem 0',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                color: '#ffffff',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}
+            >
               {review.movie_title}
             </h4>
           )}
 
           {/* User Row + Rating */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: showMoviePoster ? '0.55rem' : '1.25rem',
+              marginBottom: showMoviePoster ? '0.45rem' : '1.25rem',
+              flexWrap: 'wrap'
+            }}
+          >
             <div
               onClick={handleUserClick}
-              style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: showMoviePoster ? '6px' : '12px', cursor: 'pointer' }}
             >
-              <div style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                background: '#1a1a1a',
-                border: '1px solid #333333',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.05rem',
-                fontWeight: 800,
-                color: '#ffffff',
-                overflow: 'hidden',
-                flexShrink: 0
-              }}>
-                {review.profiles?.avatar_url ? (
+              <div
+                style={{
+                  width: showMoviePoster ? '22px' : '42px',
+                  height: showMoviePoster ? '22px' : '42px',
+                  borderRadius: '50%',
+                  background: '#1a1a1a',
+                  border: '1px solid #333333',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: showMoviePoster ? '0.7rem' : '1.05rem',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  overflow: 'hidden',
+                  flexShrink: 0
+                }}
+              >
+                {avatarUrl ? (
                   <img
-                    src={review.profiles.avatar_url}
+                    src={avatarUrl}
                     alt={username}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block'
+                    }}
+                    onError={(e) => {
+                      // Fallback if image URL is 404 or bad
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                 ) : (
-                  initial
+                  <span>{initial}</span>
                 )}
               </div>
               <span
                 style={{
-                  fontSize: '1.15rem',
-                  fontWeight: 700,
+                  fontSize: showMoviePoster ? '0.82rem' : '1.15rem',
+                  fontWeight: 600,
                   color: '#ffffff',
                   transition: 'color 0.15s ease'
                 }}
@@ -186,28 +222,30 @@ export default function ReviewCard({
               </span>
             </div>
 
-            <span style={{ color: '#444444', fontSize: '1rem' }}>•</span>
-            <StarRating rating={review.rating || 0} interactive={false} size={20} />
+            <span style={{ color: '#444444', fontSize: showMoviePoster ? '0.75rem' : '1rem' }}>•</span>
+            <StarRating rating={review.rating || 0} interactive={false} size={showMoviePoster ? 12 : 20} />
           </div>
 
-          {/* Large Review Text */}
-          <p style={{
-            margin: 0,
-            fontSize: '1.28rem',
-            color: '#f0f0f0',
-            lineHeight: '1.7',
-            wordBreak: 'break-word',
-            display: '-webkit-box',
-            WebkitLineClamp: 6,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }}>
+          {/* Review Text */}
+          <p
+            style={{
+              margin: 0,
+              fontSize: showMoviePoster ? '0.85rem' : '1.28rem',
+              color: '#d4d4d4',
+              lineHeight: showMoviePoster ? '1.45' : '1.7',
+              wordBreak: 'break-word',
+              display: '-webkit-box',
+              WebkitLineClamp: showMoviePoster ? 2 : 6,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
+          >
             {review.review_text}
           </p>
         </div>
 
         {/* Footer Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: showMoviePoster ? '0.6rem' : '1.5rem' }}>
           <button
             onClick={handleToggleLike}
             title={liked ? 'Unlike' : 'Like'}
@@ -216,18 +254,18 @@ export default function ReviewCard({
               border: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              color: liked ? '#ef4444' : '#888888',
+              gap: '5px',
+              color: liked ? '#ef4444' : '#737373',
               cursor: 'pointer',
-              padding: '6px 0',
-              fontSize: '1.05rem',
-              fontWeight: 700,
+              padding: '2px 0',
+              fontSize: showMoviePoster ? '0.78rem' : '1.05rem',
+              fontWeight: 600,
               transition: 'color 0.15s ease, transform 0.1s ease'
             }}
             onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
             onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           >
-            <Heart size={20} fill={liked ? '#ef4444' : 'transparent'} />
+            <Heart size={showMoviePoster ? 13 : 20} fill={liked ? '#ef4444' : 'transparent'} />
             <span>{likeCount}</span>
           </button>
 
@@ -243,13 +281,13 @@ export default function ReviewCard({
                 border: 'none',
                 color: '#737373',
                 cursor: 'pointer',
-                padding: '6px',
+                padding: '2px',
                 transition: 'color 0.15s ease'
               }}
               onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
               onMouseLeave={(e) => (e.currentTarget.style.color = '#737373')}
             >
-              <Trash2 size={18} />
+              <Trash2 size={showMoviePoster ? 13 : 18} />
             </button>
           )}
         </div>
