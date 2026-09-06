@@ -47,10 +47,10 @@ function MovieCard({ movie, onSelect }) {
         />
       </div>
 
-      <div style={{ padding: '0.65rem 0.75rem' }}>
+      <div style={{ padding: '0.75rem 0.85rem' }}>
         <h3 style={{
-          fontSize: '0.82rem',
-          margin: '0 0 0.3rem 0',
+          fontSize: '0.9rem',
+          margin: '0 0 0.35rem 0',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -61,10 +61,10 @@ function MovieCard({ movie, onSelect }) {
           {movie.title || 'Untitled'}
         </h3>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-secondary, #71717a)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary, #71717a)' }}>
           <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#ffffff', fontWeight: 600 }}>
-            <Star size={11} fill="#ffffff" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', fontWeight: 600 }}>
+            <Star size={13} fill="#ffffff" />
             {movie.vote_average ? movie.vote_average.toFixed(1) : '-'}
           </span>
         </div>
@@ -107,7 +107,7 @@ function HomeFeed({ onSelectMovie }) {
   }, []);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 1.5rem 4rem 1.5rem' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem 2rem 5rem 2rem' }}>
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -149,7 +149,7 @@ function HomeFeed({ onSelectMovie }) {
       )}
 
       {!loading && !error && movies.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1.5rem' }}>
           {movies.map((movie) => (
             <MovieCard
               key={movie.id}
