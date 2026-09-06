@@ -89,32 +89,33 @@ export default function ReviewCard({
     <div
       onClick={() => onSelectMovie && onSelectMovie(review.tmdb_movie_id)}
       style={{
-        background: '#0a0a0a',
-        border: '1px solid #1a1a1a',
-        borderRadius: '10px',
-        padding: '1.15rem',
+        background: '#0d0d0d',
+        border: '1px solid #242424',
+        borderRadius: '16px',
+        padding: '2rem 2.25rem',
         display: 'flex',
-        gap: '1.15rem',
+        gap: '1.75rem',
         cursor: onSelectMovie ? 'pointer' : 'default',
         transition: 'border-color 0.15s ease, transform 0.15s ease',
-        minHeight: '135px'
+        width: '100%',
+        boxSizing: 'border-box'
       }}
       onMouseEnter={(e) => {
         if (onSelectMovie) {
-          e.currentTarget.style.borderColor = '#333333';
+          e.currentTarget.style.borderColor = '#404040';
           e.currentTarget.style.transform = 'translateY(-2px)';
         }
       }}
       onMouseLeave={(e) => {
         if (onSelectMovie) {
-          e.currentTarget.style.borderColor = '#1a1a1a';
+          e.currentTarget.style.borderColor = '#242424';
           e.currentTarget.style.transform = 'translateY(0)';
         }
       }}
     >
-      {/* 2:3 Movie Poster */}
+      {/* Movie Poster (When shown in community feed) */}
       {showMoviePoster && review.movie_poster_path && (
-        <div style={{ width: '70px', height: '105px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#121212', border: '1px solid #222222' }}>
+        <div style={{ width: '95px', height: '142px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, background: '#141414', border: '1px solid #242424' }}>
           <img
             src={getImageUrl(review.movie_poster_path, 'w185')}
             alt={review.movie_title}
@@ -123,82 +124,81 @@ export default function ReviewCard({
         </div>
       )}
 
-      {/* Content Body */}
+      {/* Review Content */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
-          {/* Movie Title */}
           {showMoviePoster && (
             <h4 style={{
-              margin: '0 0 0.4rem 0',
-              fontSize: '0.95rem',
-              fontWeight: 700,
+              margin: '0 0 0.6rem 0',
+              fontSize: '1.3rem',
+              fontWeight: 800,
               color: '#ffffff',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              letterSpacing: '-0.01em'
+              textOverflow: 'ellipsis'
             }}>
               {review.movie_title}
             </h4>
           )}
 
           {/* User Row + Rating */}
-<div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
-  <div
-    onClick={handleUserClick}
-    style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer' }}
-  >
-    <div style={{
-      width: '22px',
-      height: '22px',
-      borderRadius: '50%',
-      background: '#1e1e1e',
-      border: '1px solid #2e2e2e',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '0.7rem',
-      fontWeight: 700,
-      color: '#ffffff',
-      overflow: 'hidden',
-      flexShrink: 0
-    }}>
-      {review.profiles?.avatar_url ? (
-        <img
-          src={review.profiles.avatar_url}
-          alt={username}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      ) : (
-        initial
-      )}
-    </div>
-    <span
-      style={{
-        fontSize: '0.8rem',
-        fontWeight: 600,
-        color: '#a3a3a3',
-        transition: 'color 0.15s ease'
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-      onMouseLeave={(e) => (e.currentTarget.style.color = '#a3a3a3')}
-    >
-      {username}
-    </span>
-  </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+            <div
+              onClick={handleUserClick}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+            >
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                background: '#1a1a1a',
+                border: '1px solid #333333',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                overflow: 'hidden',
+                flexShrink: 0
+              }}>
+                {review.profiles?.avatar_url ? (
+                  <img
+                    src={review.profiles.avatar_url}
+                    alt={username}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  initial
+                )}
+              </div>
+              <span
+                style={{
+                  fontSize: '1.15rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  transition: 'color 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#38bdf8')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#ffffff')}
+              >
+                {username}
+              </span>
+            </div>
 
-            <span style={{ color: '#333333', fontSize: '0.7rem' }}>•</span>
-            <StarRating rating={review.rating || 0} interactive={false} size={11} />
+            <span style={{ color: '#444444', fontSize: '1rem' }}>•</span>
+            <StarRating rating={review.rating || 0} interactive={false} size={20} />
           </div>
 
-          {/* Review Text */}
+          {/* Large Review Text */}
           <p style={{
             margin: 0,
-            fontSize: '0.84rem',
-            color: '#cccccc',
-            lineHeight: '1.5',
+            fontSize: '1.28rem',
+            color: '#f0f0f0',
+            lineHeight: '1.7',
+            wordBreak: 'break-word',
             display: '-webkit-box',
-            WebkitLineClamp: 3,
+            WebkitLineClamp: 6,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden'
           }}>
@@ -207,7 +207,7 @@ export default function ReviewCard({
         </div>
 
         {/* Footer Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem' }}>
           <button
             onClick={handleToggleLike}
             title={liked ? 'Unlike' : 'Like'}
@@ -216,18 +216,18 @@ export default function ReviewCard({
               border: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
-              color: liked ? '#ef4444' : '#525252',
+              gap: '8px',
+              color: liked ? '#ef4444' : '#888888',
               cursor: 'pointer',
-              padding: '2px 0',
-              fontSize: '0.75rem',
-              fontWeight: 600,
+              padding: '6px 0',
+              fontSize: '1.05rem',
+              fontWeight: 700,
               transition: 'color 0.15s ease, transform 0.1s ease'
             }}
             onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
             onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           >
-            <Heart size={13} fill={liked ? '#ef4444' : 'transparent'} />
+            <Heart size={20} fill={liked ? '#ef4444' : 'transparent'} />
             <span>{likeCount}</span>
           </button>
 
@@ -241,15 +241,15 @@ export default function ReviewCard({
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#525252',
+                color: '#737373',
                 cursor: 'pointer',
-                padding: '2px',
+                padding: '6px',
                 transition: 'color 0.15s ease'
               }}
               onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#525252')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#737373')}
             >
-              <Trash2 size={13} />
+              <Trash2 size={18} />
             </button>
           )}
         </div>
