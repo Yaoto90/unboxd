@@ -26,18 +26,16 @@ export const isValidFilm = (movie, isSearch = false) => {
   }
 
   // 2. Kill Unverified Low-Budget Adult VOD
-  // Obscure adult/softcore stubs have 0 ratings or no popularity
   const voteCount = movie.vote_count || 0;
   const popularity = movie.popularity || 0;
 
   if (isSearch) {
-    // If a search result has 0 ratings and negligible popularity, it's an unverified catalog stub
     if (voteCount === 0 && popularity < 2.0) {
       return false;
     }
   }
 
-  // Japanese films must have verified release data to avoid unflagged home AV videos
+  // Japanese films must have verified release data
   if (movie.original_language === 'ja' && voteCount < 2) {
     return false;
   }
@@ -54,37 +52,53 @@ export const isValidFilm = (movie, isSearch = false) => {
   return true;
 };
 
-// 1. Trending Week (Home Feed: strictly 14 titles)
+// 1. Trending Week (Home Feed: strictly 18 titles, +4 added)
 export const getTrendingMoviesWeek = async () => {
   try {
-    const url = `${BASE_URL}/trending/movie/week?language=en-US`;
-    const res = await fetch(url, options);
-    if (!res.ok) throw new Error('Trending API error');
-    const data = await res.json();
-    const results = Array.isArray(data.results) ? data.results : [];
-    return results.filter((m) => isValidFilm(m, false)).slice(0, 14);
+    const url1 = `${BASE_URL}/trending/movie/week?language=en-US&page=1`;
+    const url2 = `${BASE_URL}/trending/movie/week?language=en-US&page=2`;
+    
+    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
+    const data1 = res1.ok ? await res1.json() : { results: [] };
+    const data2 = res2.ok ? await res2.json() : { results: [] };
+
+    const merged = [...(data1.results || []), ...(data2.results || [])];
+    return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
   } catch (err) {
     console.error('getTrendingMoviesWeek error:', err);
     return [];
   }
 };
 
-// 2. Search Movies (28 titles)
+// 2. Search Movies (30 titles, +2 added)
 export const searchMovies = async (query, page = 1) => {
   try {
     const p1 = page * 2 - 1;
     const p2 = page * 2;
+    const p3 = page * 2 + 1;
+    
     const url1 = `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=${p1}&include_adult=false`;
     const url2 = `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=${p2}&include_adult=false`;
+    const url3 = `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=${p3}&include_adult=false`;
 
-    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
+    const [res1, res2, res3] = await Promise.all([
+      fetch(url1, options), 
+      fetch(url2, options),
+      fetch(url3, options)
+    ]);
+    
     const data1 = res1.ok ? await res1.json() : { results: [] };
     const data2 = res2.ok ? await res2.json() : { results: [] };
+    const data3 = res3.ok ? await res3.json() : { results: [] };
 
-    // isSearch = true activates the 0-vote VOD filter
-    const merged = [...(data1.results || []), ...(data2.results || [])].filter((m) => isValidFilm(m, true));
+    const merged = [
+      ...(data1.results || []), 
+      ...(data2.results || []),
+      ...(data3.results || [])
+    ].filter((m) => isValidFilm(m, true));
+
     return {
-      results: merged.slice(0, 28),
+      results: merged.slice(0, 30),
       totalPages: Math.max(1, Math.floor((data1.total_pages || 1) / 2))
     };
   } catch (err) {
@@ -93,7 +107,7 @@ export const searchMovies = async (query, page = 1) => {
   }
 };
 
-// 3. Discover Filtered Movies (28 titles)
+// 3. Discover Filtered Movies (30 titles, +2 added)
 export const discoverLetterboxd = async ({
   decade = '',
   ratingOrder = '',
@@ -105,6 +119,7 @@ export const discoverLetterboxd = async ({
     const today = new Date().toISOString().split('T')[0];
     const p1 = page * 2 - 1;
     const p2 = page * 2;
+    const p3 = page * 2 + 1;
 
     const buildUrl = (pageNum) => {
       let url = `${BASE_URL}/discover/movie?include_adult=false&include_video=false&language=en-US&page=${pageNum}&with_original_language=en%7Cja%7Cko`;
@@ -137,13 +152,24 @@ export const discoverLetterboxd = async ({
       return url;
     };
 
-    const [res1, res2] = await Promise.all([fetch(buildUrl(p1), options), fetch(buildUrl(p2), options)]);
+    const [res1, res2, res3] = await Promise.all([
+      fetch(buildUrl(p1), options), 
+      fetch(buildUrl(p2), options),
+      fetch(buildUrl(p3), options)
+    ]);
+
     const data1 = res1.ok ? await res1.json() : { results: [] };
     const data2 = res2.ok ? await res2.json() : { results: [] };
+    const data3 = res3.ok ? await res3.json() : { results: [] };
 
-    const merged = [...(data1.results || []), ...(data2.results || [])].filter((m) => isValidFilm(m, false));
+    const merged = [
+      ...(data1.results || []), 
+      ...(data2.results || []),
+      ...(data3.results || [])
+    ].filter((m) => isValidFilm(m, false));
+
     return {
-      results: merged.slice(0, 28),
+      results: merged.slice(0, 30),
       totalPages: Math.max(1, Math.floor((data1.total_pages || 1) / 2))
     };
   } catch (err) {
