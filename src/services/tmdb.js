@@ -234,7 +234,7 @@ export const discoverLetterboxd = async ({
 };
 
 export const getMovieDetails = async (movieId) => {
-  const res = await fetch(`${BASE_URL}/movie/${movieId}?language=en-US&append_to_response=credits`, options);
+  const res = await fetch(`${BASE_URL}/movie/${movieId}?language=en-US&append_to_response=credits,videos`, options);
   if (!res.ok) throw new Error('Failed to fetch movie details');
   return res.json();
 };

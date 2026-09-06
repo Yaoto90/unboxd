@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getMovieDetails, getImageUrl } from '../services/tmdb';
 import StarRating from './StarRating';
 import ReviewCard from './ReviewCard';
-import { X, Star, Bookmark, Send, Clock, Calendar, Share2, Check } from 'lucide-react';
+import { X, Star, Bookmark, Send, Clock, Calendar, Share2, Check, Play } from 'lucide-react';
 
 export default function MovieDetailModal({ movieId, onClose }) {
   const { user } = useAuth();
@@ -16,6 +16,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const [inWatchlist, setInWatchlist] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
 
   useEffect(() => {
     if (!movieId) return;
@@ -137,6 +138,20 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const backdropSrc = movie?.backdrop_path ? getImageUrl(movie.backdrop_path, 'original') : null;
   const director = movie?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const topCast = movie?.credits?.cast?.slice(0, 12) || [];
+
+  /// Strict YouTube trailer matching
+  const videos = movie?.videos?.results || [];
+  const youtubeTrailers = videos.filter((v) => v.site === 'YouTube' && v.type === 'Trailer');
+
+  const trailer =
+    // 1. Exact match for 'Official Trailer' or 'Main Trailer'
+    youtubeTrailers.find((v) => /\b(official trailer|main trailer)\b/i.test(v.name)) ||
+    // 2. Any trailer titled with 'Trailer' excluding TV spots/clips
+    youtubeTrailers.find((v) => !/\b(teaser|clip|spot|sneak|featurette|promo|announcement)\b/i.test(v.name)) ||
+    // 3. Fall back to any video classified as Trailer by TMDB
+    youtubeTrailers[0] ||
+    // 4. Fall back to official teaser only if no trailer exists
+    videos.find((v) => v.site === 'YouTube' && v.type === 'Teaser');
 
   return (
     <div
@@ -320,27 +335,62 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   ))}
                 </div>
 
-                <button
-                  onClick={toggleWatchlist}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    fontSize: '0.88rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    background: inWatchlist ? '#ffffff' : 'rgba(18, 18, 18, 0.85)',
-                    color: inWatchlist ? '#000000' : '#ffffff',
-                    border: `1px solid ${inWatchlist ? '#ffffff' : '#262626'}`,
-                    backdropFilter: 'blur(6px)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <Bookmark size={15} fill={inWatchlist ? '#000000' : 'none'} />
-                  {inWatchlist ? 'In Watchlist' : 'Watchlist'}
-                </button>
+                {/* Main Action Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={toggleWatchlist}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: inWatchlist ? '#ffffff' : 'rgba(18, 18, 18, 0.85)',
+                      color: inWatchlist ? '#000000' : '#ffffff',
+                      border: `1px solid ${inWatchlist ? '#ffffff' : '#262626'}`,
+                      backdropFilter: 'blur(6px)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Bookmark size={15} fill={inWatchlist ? '#000000' : 'none'} />
+                    {inWatchlist ? 'In Watchlist' : 'Watchlist'}
+                  </button>
+
+                  {trailer && (
+                    <button
+                      onClick={() => setIsPlayingTrailer(true)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        fontSize: '0.88rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        color: '#ffffff',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(6px)',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                      }}
+                    >
+                      <Play size={15} fill="#ffffff" />
+                      <span>Watch Trailer</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -463,6 +513,79 @@ export default function MovieDetailModal({ movieId, onClose }) {
             </div>
           </div>
         ) : null}
+
+        {/* Embedded YouTube Trailer Modal Overlay */}
+        {isPlayingTrailer && trailer && (
+          <div
+            onClick={() => setIsPlayingTrailer(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              zIndex: 3000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '960px',
+                aspectRatio: '16/9',
+                background: '#000000',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '1px solid #222222',
+                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.95)'
+              }}
+            >
+              <button
+                onClick={() => setIsPlayingTrailer(false)}
+                aria-label="Close trailer"
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: 'rgba(0, 0, 0, 0.75)',
+                  border: '1px solid #333333',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                  transition: 'background 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#222222')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(0, 0, 0, 0.75)')}
+              >
+                <X size={18} />
+              </button>
+
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0&modestbranding=1`}
+                title={`${movie.title} Trailer`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  display: 'block'
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
