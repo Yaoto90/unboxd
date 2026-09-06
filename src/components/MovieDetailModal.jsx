@@ -144,7 +144,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        backgroundColor: 'rgba(0, 0, 0, 0.92)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         display: 'flex',
@@ -157,38 +157,38 @@ export default function MovieDetailModal({ movieId, onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#0a0a0c',
+          background: '#0a0a0a',
           width: '100%',
           maxWidth: '1280px',
           maxHeight: '94vh',
           borderRadius: '16px',
           overflowY: 'auto',
-          border: '1px solid #1f1f23',
+          border: '1px solid #1e1e1e',
           color: '#ffffff',
           position: 'relative',
           boxShadow: '0 35px 90px rgba(0, 0, 0, 0.98)'
         }}
       >
         {backdropSrc && (
-  <div
-    style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '560px',
-      backgroundImage: `url(${backdropSrc})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center top',
-      opacity: 0.42,
-      filter: 'brightness(1.02)',
-      pointerEvents: 'none',
-      maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
-      WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
-      zIndex: 0
-    }}
-  />
-)}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '560px',
+              backgroundImage: `url(${backdropSrc})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top',
+              opacity: 0.42,
+              filter: 'brightness(1.02)',
+              pointerEvents: 'none',
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
+              zIndex: 0
+            }}
+          />
+        )}
 
         {/* Action Controls */}
         <div style={{ position: 'absolute', top: '1.75rem', right: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', zIndex: 30 }}>
@@ -196,9 +196,9 @@ export default function MovieDetailModal({ movieId, onClose }) {
             onClick={handleShare}
             title="Copy share link"
             style={{
-              background: 'rgba(20, 20, 23, 0.85)',
-              border: `1px solid ${copied ? '#22c55e' : '#27272a'}`,
-              color: copied ? '#22c55e' : '#e4e4e7',
+              background: 'rgba(18, 18, 18, 0.85)',
+              border: `1px solid ${copied ? '#22c55e' : '#262626'}`,
+              color: copied ? '#22c55e' : '#e5e5e5',
               borderRadius: '8px',
               padding: '0 14px',
               height: '38px',
@@ -220,9 +220,9 @@ export default function MovieDetailModal({ movieId, onClose }) {
             onClick={onClose}
             aria-label="Close modal"
             style={{
-              background: 'rgba(20, 20, 23, 0.85)',
-              border: '1px solid #27272a',
-              color: '#a1a1aa',
+              background: 'rgba(18, 18, 18, 0.85)',
+              border: '1px solid #262626',
+              color: '#8a8a8a',
               borderRadius: '8px',
               width: '38px',
               height: '38px',
@@ -235,11 +235,11 @@ export default function MovieDetailModal({ movieId, onClose }) {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.borderColor = '#3f3f46';
+              e.currentTarget.style.borderColor = '#383838';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#a1a1aa';
-              e.currentTarget.style.borderColor = '#27272a';
+              e.currentTarget.style.color = '#8a8a8a';
+              e.currentTarget.style.borderColor = '#262626';
             }}
           >
             <X size={17} />
@@ -247,7 +247,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '10rem 2rem', color: '#71717a', fontSize: '1rem' }}>
+          <div style={{ textAlign: 'center', padding: '10rem 2rem', color: '#737373', fontSize: '1rem' }}>
             Loading film details...
           </div>
         ) : movie ? (
@@ -260,7 +260,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
                 style={{
                   width: '240px',
                   borderRadius: '12px',
-                  border: '1px solid #27272a',
+                  border: '1px solid #222222',
                   boxShadow: '0 20px 45px rgba(0, 0, 0, 0.9)',
                   display: 'block',
                   flexShrink: 0
@@ -272,18 +272,18 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   <h1 style={{ margin: 0, fontSize: '2.6rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.15 }}>
                     {movie.title}
                   </h1>
-                  <span style={{ fontSize: '1.4rem', color: '#a1a1aa', fontWeight: 400 }}>
+                  <span style={{ fontSize: '1.4rem', color: '#737373', fontWeight: 400 }}>
                     {movie.release_date?.split('-')[0]}
                   </span>
                 </div>
 
                 {director && (
-                  <p style={{ margin: '0.6rem 0 1.25rem 0', fontSize: '0.95rem', color: '#d4d4d8' }}>
+                  <p style={{ margin: '0.6rem 0 1.25rem 0', fontSize: '0.95rem', color: '#a3a3a3' }}>
                     Directed by <span style={{ color: '#ffffff', fontWeight: 600 }}>{director}</span>
                   </p>
                 )}
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.5rem', color: '#d4d4d8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.5rem', color: '#a3a3a3', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#22c55e', fontWeight: 700 }}>
                     <Star size={15} fill="#22c55e" />
                     {movie.vote_average ? movie.vote_average.toFixed(1) : '-'} / 10
@@ -305,8 +305,8 @@ export default function MovieDetailModal({ movieId, onClose }) {
                     <span
                       key={g.id}
                       style={{
-                        background: 'rgba(20, 20, 23, 0.75)',
-                        border: '1px solid #27272a',
+                        background: 'rgba(18, 18, 18, 0.85)',
+                        border: '1px solid #262626',
                         color: '#ffffff',
                         padding: '5px 12px',
                         borderRadius: '6px',
@@ -331,9 +331,9 @@ export default function MovieDetailModal({ movieId, onClose }) {
                     fontSize: '0.88rem',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    background: inWatchlist ? '#ffffff' : 'rgba(20, 20, 23, 0.85)',
+                    background: inWatchlist ? '#ffffff' : 'rgba(18, 18, 18, 0.85)',
                     color: inWatchlist ? '#000000' : '#ffffff',
-                    border: `1px solid ${inWatchlist ? '#ffffff' : '#27272a'}`,
+                    border: `1px solid ${inWatchlist ? '#ffffff' : '#262626'}`,
                     backdropFilter: 'blur(6px)',
                     transition: 'all 0.15s ease'
                   }}
@@ -345,40 +345,40 @@ export default function MovieDetailModal({ movieId, onClose }) {
             </div>
 
             {movie.tagline && (
-              <p style={{ fontStyle: 'italic', color: '#a1a1aa', fontSize: '1rem', marginTop: '2.5rem', marginBottom: '0.75rem' }}>
+              <p style={{ fontStyle: 'italic', color: '#737373', fontSize: '1rem', marginTop: '2.5rem', marginBottom: '0.75rem' }}>
                 "{movie.tagline}"
               </p>
             )}
 
-            <p style={{ lineHeight: '1.75', color: '#e4e4e7', fontSize: '1rem', margin: '0.75rem 0 0 0', maxWidth: '1100px' }}>
+            <p style={{ lineHeight: '1.75', color: '#d4d4d4', fontSize: '1rem', margin: '0.75rem 0 0 0', maxWidth: '1100px' }}>
               {movie.overview || 'No description available.'}
             </p>
 
             {/* Cast Section */}
             {topCast.length > 0 && (
               <div style={{ marginTop: '3rem' }}>
-                <span style={{ display: 'block', margin: '0 0 1.25rem 0', fontSize: '0.8rem', fontWeight: 700, color: '#a1a1aa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                <span style={{ display: 'block', margin: '0 0 1.25rem 0', fontSize: '0.8rem', fontWeight: 700, color: '#737373', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                   Cast
                 </span>
                 <div style={{ display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1rem' }}>
                   {topCast.map((actor) => (
                     <div key={actor.id} style={{ minWidth: '100px', maxWidth: '100px', textAlign: 'center', flexShrink: 0 }}>
-                      <div style={{ width: '72px', height: '72px', margin: '0 auto 0.6rem auto', borderRadius: '50%', overflow: 'hidden', background: '#141417', border: '1px solid #232328' }}>
+                      <div style={{ width: '72px', height: '72px', margin: '0 auto 0.6rem auto', borderRadius: '50%', overflow: 'hidden', background: '#121212', border: '1px solid #222222' }}>
                         {actor.profile_path ? (
                           <img src={getImageUrl(actor.profile_path, 'w185')} alt={actor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#71717a', fontSize: '0.8rem' }}>N/A</div>
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#525252', fontSize: '0.8rem' }}>N/A</div>
                         )}
                       </div>
                       <p style={{ margin: 0, fontSize: '0.82rem', color: '#ffffff', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{actor.name}</p>
-                      <p style={{ margin: '3px 0 0 0', fontSize: '0.72rem', color: '#a1a1aa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{actor.character}</p>
+                      <p style={{ margin: '3px 0 0 0', fontSize: '0.72rem', color: '#737373', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{actor.character}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <hr style={{ borderColor: '#1f1f23', margin: '3rem 0' }} />
+            <hr style={{ borderColor: '#1a1a1a', margin: '3rem 0' }} />
 
             {/* Add Review Form */}
             <div style={{ marginBottom: '3rem' }}>
@@ -400,8 +400,8 @@ export default function MovieDetailModal({ movieId, onClose }) {
                     onChange={(e) => setReviewText(e.target.value)}
                     style={{
                       width: '100%',
-                      background: '#121215',
-                      border: '1px solid #232328',
+                      background: '#121212',
+                      border: '1px solid #222222',
                       borderRadius: '8px',
                       padding: '14px 16px',
                       color: '#ffffff',
@@ -435,7 +435,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   </button>
                 </form>
               ) : (
-                <p style={{ color: '#71717a', fontSize: '0.95rem' }}>Sign in to rate or review.</p>
+                <p style={{ color: '#737373', fontSize: '0.95rem' }}>Sign in to rate or review.</p>
               )}
             </div>
 
@@ -446,7 +446,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
               </h3>
 
               {reviews.length === 0 ? (
-                <p style={{ color: '#71717a', fontSize: '0.95rem' }}>No reviews yet.</p>
+                <p style={{ color: '#737373', fontSize: '0.95rem' }}>No reviews yet.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   {reviews.map((rev) => (

@@ -78,7 +78,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: 'rgba(0, 0, 0, 0.88)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         display: 'flex',
@@ -91,8 +91,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#0a0a0c',
-          border: '1px solid #1f1f23',
+          background: '#0a0a0a',
+          border: '1px solid #1e1e1e',
           borderRadius: '16px',
           width: '100%',
           maxWidth: '540px',
@@ -111,7 +111,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
               fontWeight: 700,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: '#71717a',
+              color: '#737373',
               marginBottom: '0.4rem'
             }}>
               UnBoxd Account
@@ -128,9 +128,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
               width: '42px',
               height: '42px',
               borderRadius: '10px',
-              background: '#141417',
-              border: '1px solid #232328',
-              color: '#a1a1aa',
+              background: '#121212',
+              border: '1px solid #222222',
+              color: '#8a8a8a',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -139,13 +139,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.borderColor = '#3f3f46';
-              e.currentTarget.style.background = '#1a1a1e';
+              e.currentTarget.style.borderColor = '#383838';
+              e.currentTarget.style.background = '#1a1a1a';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#a1a1aa';
-              e.currentTarget.style.borderColor = '#232328';
-              e.currentTarget.style.background = '#141417';
+              e.currentTarget.style.color = '#8a8a8a';
+              e.currentTarget.style.borderColor = '#222222';
+              e.currentTarget.style.background = '#121212';
             }}
           >
             <X size={18} />
@@ -175,7 +175,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                 fontWeight: 700,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: '#71717a',
+                color: '#737373',
                 marginBottom: '8px'
               }}>
                 Username
@@ -190,16 +190,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                   width: '100%',
                   padding: '14px 16px',
                   borderRadius: '10px',
-                  background: '#141417',
-                  border: '1px solid #232328',
+                  background: '#121212',
+                  border: '1px solid #222222',
                   color: '#ffffff',
                   fontSize: '0.95rem',
                   outline: 'none',
                   boxSizing: 'border-box',
                   transition: 'border-color 0.15s ease'
                 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = '#52525b')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = '#232328')}
+                onFocus={(e) => (e.currentTarget.style.borderColor = '#444444')}
+                onBlur={(e) => (e.currentTarget.style.borderColor = '#222222')}
               />
             </div>
           )}
@@ -211,7 +211,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: '#71717a',
+              color: '#737373',
               marginBottom: '8px'
             }}>
               Email Address
@@ -226,16 +226,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: '10px',
-                background: '#141417',
-                border: '1px solid #232328',
+                background: '#121212',
+                border: '1px solid #222222',
                 color: '#ffffff',
                 fontSize: '0.95rem',
                 outline: 'none',
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s ease'
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#52525b')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = '#232328')}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#444444')}
+              onBlur={(e) => (e.currentTarget.style.borderColor = '#222222')}
             />
           </div>
 
@@ -246,7 +246,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: '#71717a',
+              color: '#737373',
               marginBottom: '8px'
             }}>
               Password
@@ -261,16 +261,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: '10px',
-                background: '#141417',
-                border: '1px solid #232328',
+                background: '#121212',
+                border: '1px solid #222222',
                 color: '#ffffff',
                 fontSize: '0.95rem',
                 outline: 'none',
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s ease'
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#52525b')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = '#232328')}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#444444')}
+              onBlur={(e) => (e.currentTarget.style.borderColor = '#222222')}
             />
           </div>
 
@@ -291,7 +291,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
               transition: 'background 0.15s ease, opacity 0.15s ease'
             }}
             onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.background = '#e4e4e7';
+              if (!loading) e.currentTarget.style.background = '#e5e5e5';
             }}
             onMouseLeave={(e) => {
               if (!loading) e.currentTarget.style.background = '#ffffff';
@@ -301,7 +301,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
           </button>
         </form>
 
-        <p style={{ marginTop: '2rem', marginBottom: 0, fontSize: '0.9rem', textAlign: 'center', color: '#71717a' }}>
+        <p style={{ marginTop: '2rem', marginBottom: 0, fontSize: '0.9rem', textAlign: 'center', color: '#737373' }}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             type="button"
