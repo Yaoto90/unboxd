@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -11,46 +11,66 @@ export default function ReviewCard({
   onSelectMovie,
   onDelete,
   showMoviePoster = false,
-  onCloseModal
+  onCloseModal,
+  onOpenAuth
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const initialLiked = review.review_likes?.some((l) => l.user_id === user?.id) || false;
-  const [liked, setLiked] = useState(initialLiked);
+  const [liked, setLiked] = useState(
+    review.review_likes?.some((l) => l.user_id === user?.id) || false
+  );
   const [likeCount, setLikeCount] = useState(review.review_likes?.length || 0);
   const [loadingLike, setLoadingLike] = useState(false);
 
+  useEffect(() => {
+    setLiked(review.review_likes?.some((l) => l.user_id === user?.id) || false);
+    setLikeCount(review.review_likes?.length || 0);
+  }, [user, review]);
+
   const handleToggleLike = async (e) => {
     e.stopPropagation();
-    if (!user) return alert('Please sign in to like reviews.');
+    if (!user) {
+      if (typeof onOpenAuth === 'function') {
+        onOpenAuth('signin');
+      } else {
+        alert('Please sign in to like reviews.');
+      }
+      return;
+    }
     if (loadingLike) return;
 
+    const previousLiked = liked;
+    const previousCount = likeCount;
+
+    setLiked(!previousLiked);
+    setLikeCount((prev) => (previousLiked ? Math.max(0, prev - 1) : prev + 1));
     setLoadingLike(true);
+
     try {
-      if (liked) {
-        await supabase
+      if (previousLiked) {
+        const { error } = await supabase
           .from('review_likes')
           .delete()
           .eq('review_id', review.id)
           .eq('user_id', user.id);
-        setLiked(false);
-        setLikeCount((prev) => Math.max(0, prev - 1));
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('review_likes')
           .insert({ review_id: review.id, user_id: user.id });
-        setLiked(true);
-        setLikeCount((prev) => prev + 1);
+        if (error) throw error;
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to update like:', err);
+      setLiked(previousLiked);
+      setLikeCount(previousCount);
     } finally {
       setLoadingLike(false);
     }
   };
 
-const handleUserClick = (e) => {
+  const handleUserClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     const username = review.profiles?.username;
@@ -61,81 +81,141 @@ const handleUserClick = (e) => {
       navigate(`/user/${username}`);
     }
   };
+
+  const username = review.profiles?.username || 'user';
+  const initial = username.charAt(0).toUpperCase();
+
   return (
     <div
       onClick={() => onSelectMovie && onSelectMovie(review.tmdb_movie_id)}
       style={{
         background: '#0a0a0a',
-        border: '1px solid #1f1f23',
-        borderRadius: '8px',
-        padding: '1rem',
+        border: '1px solid #1a1a1a',
+        borderRadius: '10px',
+        padding: '1.15rem',
         display: 'flex',
-        gap: '1rem',
+        gap: '1.15rem',
         cursor: onSelectMovie ? 'pointer' : 'default',
-        transition: 'border-color 0.15s ease'
+        transition: 'border-color 0.15s ease, transform 0.15s ease',
+        minHeight: '135px'
       }}
-      onMouseEnter={(e) => onSelectMovie && (e.currentTarget.style.borderColor = '#3f3f46')}
-      onMouseLeave={(e) => onSelectMovie && (e.currentTarget.style.borderColor = '#1f1f23')}
+      onMouseEnter={(e) => {
+        if (onSelectMovie) {
+          e.currentTarget.style.borderColor = '#333333';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (onSelectMovie) {
+          e.currentTarget.style.borderColor = '#1a1a1a';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }
+      }}
     >
+      {/* 2:3 Movie Poster */}
       {showMoviePoster && review.movie_poster_path && (
-        <img
-          src={getImageUrl(review.movie_poster_path, 'w185')}
-          alt={review.movie_title}
-          style={{ width: '48px', height: '72px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
-        />
+        <div style={{ width: '70px', height: '105px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#121212', border: '1px solid #222222' }}>
+          <img
+            src={getImageUrl(review.movie_poster_path, 'w185')}
+            alt={review.movie_title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        </div>
       )}
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.3rem' }}>
+      {/* Content Body */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div>
+          {/* Movie Title */}
           {showMoviePoster && (
-            <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <h4 style={{
+              margin: '0 0 0.4rem 0',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              color: '#ffffff',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              letterSpacing: '-0.01em'
+            }}>
               {review.movie_title}
             </h4>
           )}
 
-          <span
-            onClick={handleUserClick}
-            style={{
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              color: '#e4e4e7',
-              cursor: 'pointer',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
-          >
-            {review.profiles?.username || 'User'}
-          </span>
+          {/* User Row + Rating */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+            <div
+              onClick={handleUserClick}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+            >
+              <div style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                background: '#1e1e1e',
+                border: '1px solid #2e2e2e',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: '#ffffff'
+              }}>
+                {initial}
+              </div>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: '#a3a3a3',
+                  transition: 'color 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#a3a3a3')}
+              >
+                {username}
+              </span>
+            </div>
+
+            <span style={{ color: '#333333', fontSize: '0.7rem' }}>•</span>
+            <StarRating rating={review.rating || 0} interactive={false} size={11} />
+          </div>
+
+          {/* Review Text */}
+          <p style={{
+            margin: 0,
+            fontSize: '0.84rem',
+            color: '#cccccc',
+            lineHeight: '1.5',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
+          }}>
+            {review.review_text}
+          </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <StarRating rating={review.rating || 0} interactive={false} size={11} />
-        </div>
-
-        <p style={{
-          margin: '0 0 0.75rem 0',
-          fontSize: '0.82rem',
-          color: '#a1a1aa',
-          lineHeight: '1.45'
-        }}>
-          {review.review_text}
-        </p>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Footer Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem' }}>
           <button
             onClick={handleToggleLike}
+            title={liked ? 'Unlike' : 'Like'}
             style={{
               background: 'none',
               border: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
-              color: liked ? '#ef4444' : '#71717a',
+              gap: '5px',
+              color: liked ? '#ef4444' : '#525252',
               cursor: 'pointer',
-              padding: 0,
-              fontSize: '0.75rem'
+              padding: '2px 0',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              transition: 'color 0.15s ease, transform 0.1s ease'
             }}
+            onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
+            onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           >
             <Heart size={13} fill={liked ? '#ef4444' : 'transparent'} />
             <span>{likeCount}</span>
@@ -147,7 +227,17 @@ const handleUserClick = (e) => {
                 e.stopPropagation();
                 onDelete(review.id);
               }}
-              style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', padding: 0 }}
+              title="Delete review"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#525252',
+                cursor: 'pointer',
+                padding: '2px',
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#525252')}
             >
               <Trash2 size={13} />
             </button>

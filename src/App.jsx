@@ -354,7 +354,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.25rem' }}>
             {recentReviews.map((rev) => (
               <ReviewCard
                 key={rev.id}
