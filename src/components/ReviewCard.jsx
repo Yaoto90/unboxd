@@ -14,7 +14,7 @@ export default function ReviewCard({
   onCloseModal,
   onOpenAuth
 }) {
-  const { user } = useAuth();
+  const { user, profile: authProfile } = useAuth();
   const navigate = useNavigate();
 
   const [liked, setLiked] = useState(
@@ -70,7 +70,6 @@ export default function ReviewCard({
     }
   };
 
-  // Resolve profiles object whether Supabase returns an object or a 1-item array
   const profileData = Array.isArray(review.profiles)
     ? review.profiles[0]
     : review.profiles || {};
@@ -82,10 +81,18 @@ export default function ReviewCard({
   const handleUserClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (username && username !== 'user') {
-      if (typeof onCloseModal === 'function') {
-        onCloseModal();
-      }
+    if (typeof onCloseModal === 'function') {
+      onCloseModal();
+    }
+
+    // Direct to personal dashboard if this is your own review
+    const isCurrentUser =
+      (user && review.user_id === user.id) ||
+      (authProfile?.username && authProfile.username.toLowerCase() === username.toLowerCase());
+
+    if (isCurrentUser) {
+      navigate('/profile');
+    } else if (username && username !== 'user') {
       navigate(`/user/${username}`);
     }
   };
@@ -200,7 +207,6 @@ export default function ReviewCard({
                       display: 'block'
                     }}
                     onError={(e) => {
-                      // Fallback if image URL is 404 or bad
                       e.currentTarget.style.display = 'none';
                     }}
                   />
