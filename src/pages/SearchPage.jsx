@@ -18,36 +18,45 @@ function MovieCard({ movie, onSelect }) {
         borderRadius: '6px',
         overflow: 'hidden',
         cursor: 'pointer',
-        border: `1px solid ${isHovered ? 'var(--border-hover)' : 'var(--border-subtle)'}`,
-        transition: 'transform 0.15s ease, border-color 0.15s ease',
-        transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
+        border: `1px solid ${isHovered ? 'var(--border-hover, #3b82f6)' : 'var(--border-subtle, #27272a)'}`,
+        transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease',
+        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+        boxShadow: isHovered ? '0 10px 25px rgba(0, 0, 0, 0.65)' : 'none'
       }}
     >
       <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', overflow: 'hidden', background: '#18181b' }}>
         <img
           src={getImageUrl(movie.poster_path)}
           alt={movie.title || 'Poster'}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transition: 'transform 0.2s ease',
+            transform: isHovered ? 'scale(1.02)' : 'scale(1)'
+          }}
         />
       </div>
 
-      <div style={{ padding: '0.65rem 0.75rem' }}>
+      <div style={{ padding: '0.75rem 0.85rem' }}>
         <h3 style={{
-          fontSize: '0.82rem',
-          margin: '0 0 0.3rem 0',
+          fontSize: '0.9rem',
+          margin: '0 0 0.35rem 0',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          color: '#ffffff',
-          fontWeight: 500
+          color: isHovered ? '#ffffff' : '#e4e4e7',
+          fontWeight: 500,
+          transition: 'color 0.15s ease'
         }}>
           {movie.title || 'Untitled'}
         </h3>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary, #71717a)' }}>
           <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#ffffff', fontWeight: 600 }}>
-            <Star size={11} fill="#ffffff" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', fontWeight: 600 }}>
+            <Star size={13} fill="#ffffff" />
             {movie.vote_average ? movie.vote_average.toFixed(1) : '-'}
           </span>
         </div>
@@ -109,7 +118,7 @@ export default function SearchPage({ onSelectMovie }) {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 1.5rem 3rem 1.5rem' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem 2rem 5rem 2rem' }}>
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -133,7 +142,7 @@ export default function SearchPage({ onSelectMovie }) {
               width: '100%',
               padding: '7px 32px 7px 12px',
               background: '#0a0a0a',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-subtle, #27272a)',
               borderRadius: '6px',
               color: '#ffffff',
               fontSize: '0.85rem',
@@ -141,18 +150,18 @@ export default function SearchPage({ onSelectMovie }) {
               cursor: 'pointer'
             }}
           />
-          <Search size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <Search size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #71717a)' }} />
         </div>
       </div>
 
-      {loading && <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '4rem', fontSize: '0.9rem' }}>Loading films...</p>}
+      {loading && <p style={{ textAlign: 'center', color: 'var(--text-muted, #71717a)', marginTop: '4rem', fontSize: '0.9rem' }}>Loading films...</p>}
       {error && <p style={{ textAlign: 'center', color: '#ef4444', marginTop: '4rem', fontSize: '0.9rem' }}>{error}</p>}
       {!loading && !error && movies.length === 0 && (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '4rem', fontSize: '0.9rem' }}>No matching films found.</p>
+        <p style={{ textAlign: 'center', color: 'var(--text-muted, #71717a)', marginTop: '4rem', fontSize: '0.9rem' }}>No matching films found.</p>
       )}
 
       {!loading && !error && movies.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1.5rem' }}>
           {movies.map((movie) => (
             <MovieCard key={movie.id} movie={movie} onSelect={onSelectMovie} />
           ))}
@@ -188,7 +197,7 @@ export default function SearchPage({ onSelectMovie }) {
             <ChevronLeft size={14} /> Previous
           </button>
 
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #71717a)' }}>
             Page <strong style={{ color: '#ffffff' }}>{page}</strong> of {totalPages}
           </span>
 
