@@ -154,7 +154,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
       try {
         const { data } = await supabase
           .from('reviews')
-          .select('*, profiles(username), review_likes(user_id)')
+          .select('*, profiles(username, avatar_url), review_likes(user_id)')
           .order('created_at', { ascending: false })
           .limit(6);
         setRecentReviews(data || []);

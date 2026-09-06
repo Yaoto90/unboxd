@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getMovieDetails, getImageUrl } from '../services/tmdb';
 import StarRating from './StarRating';
 import ReviewCard from './ReviewCard';
-import { X, Star, Bookmark, Send, Clock, Calendar, Share2, Check, Play } from 'lucide-react';
+import { X, Star, Bookmark, Send, Clock, Calendar, Share2, Check, Play, Eye } from 'lucide-react';
 
 export default function MovieDetailModal({ movieId, onClose }) {
   const { user } = useAuth();
@@ -14,6 +14,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const [reviewText, setReviewText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
+  const [isWatched, setIsWatched] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [copied, setCopied] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
@@ -28,22 +29,24 @@ export default function MovieDetailModal({ movieId, onClose }) {
         setMovie(details);
 
         const { data: revData } = await supabase
-          .from('reviews')
-          .select('*, profiles(username), review_likes(user_id)')
-          .eq('tmdb_movie_id', movieId)
-          .order('created_at', { ascending: false });
+        .from('reviews')
+        .select('*, profiles(username, avatar_url), review_likes(user_id)') // <--- add avatar_url
+        .eq('tmdb_movie_id', movieId)
+        .order('created_at', { ascending: false });
 
         setReviews(revData || []);
 
         if (user) {
-          const { data: watchData } = await supabase
+          const { data: listData } = await supabase
             .from('watchlists')
-            .select('id')
+            .select('id, type')
             .eq('user_id', user.id)
-            .eq('tmdb_movie_id', movieId)
-            .maybeSingle();
+            .eq('tmdb_movie_id', movieId);
 
-          setInWatchlist(!!watchData);
+          if (listData) {
+            setInWatchlist(listData.some((item) => item.type === 'watchlist' || !item.type));
+            setIsWatched(listData.some((item) => item.type === 'watched'));
+          }
         }
       } catch (err) {
         console.error(err);
@@ -83,7 +86,12 @@ export default function MovieDetailModal({ movieId, onClose }) {
     if (!user) return alert('Please sign in to manage your watchlist.');
 
     if (inWatchlist) {
-      await supabase.from('watchlists').delete().eq('user_id', user.id).eq('tmdb_movie_id', movieId);
+      await supabase
+        .from('watchlists')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('tmdb_movie_id', movieId)
+        .or('type.eq.watchlist,type.is.null');
       setInWatchlist(false);
     } else {
       await supabase.from('watchlists').insert({
@@ -94,6 +102,39 @@ export default function MovieDetailModal({ movieId, onClose }) {
         type: 'watchlist'
       });
       setInWatchlist(true);
+    }
+  };
+
+  const toggleWatched = async () => {
+    if (!user) return alert('Please sign in to log watched films.');
+
+    if (isWatched) {
+      await supabase
+        .from('watchlists')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('tmdb_movie_id', movieId)
+        .eq('type', 'watched');
+      setIsWatched(false);
+    } else {
+      await supabase.from('watchlists').insert({
+        user_id: user.id,
+        tmdb_movie_id: movie.id,
+        movie_title: movie.title,
+        movie_poster_path: movie.poster_path,
+        type: 'watched'
+      });
+      setIsWatched(true);
+
+      if (inWatchlist) {
+        await supabase
+          .from('watchlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('tmdb_movie_id', movieId)
+          .or('type.eq.watchlist,type.is.null');
+        setInWatchlist(false);
+      }
     }
   };
 
@@ -113,12 +154,23 @@ export default function MovieDetailModal({ movieId, onClose }) {
         rating: parseFloat(rating),
         review_text: reviewText
       })
-      .select('*, profiles(username), review_likes(user_id)')
+      .select('*, profiles(username, avatar_url), review_likes(user_id)')
       .single();
 
     if (!error && data) {
       setReviews([data, ...reviews]);
       setReviewText('');
+
+      if (!isWatched) {
+        await supabase.from('watchlists').insert({
+          user_id: user.id,
+          tmdb_movie_id: movie.id,
+          movie_title: movie.title,
+          movie_poster_path: movie.poster_path,
+          type: 'watched'
+        });
+        setIsWatched(true);
+      }
     } else if (error) {
       alert(error.message);
     }
@@ -139,18 +191,12 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const director = movie?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const topCast = movie?.credits?.cast?.slice(0, 12) || [];
 
-  /// Strict YouTube trailer matching
   const videos = movie?.videos?.results || [];
   const youtubeTrailers = videos.filter((v) => v.site === 'YouTube' && v.type === 'Trailer');
-
   const trailer =
-    // 1. Exact match for 'Official Trailer' or 'Main Trailer'
     youtubeTrailers.find((v) => /\b(official trailer|main trailer)\b/i.test(v.name)) ||
-    // 2. Any trailer titled with 'Trailer' excluding TV spots/clips
     youtubeTrailers.find((v) => !/\b(teaser|clip|spot|sneak|featurette|promo|announcement)\b/i.test(v.name)) ||
-    // 3. Fall back to any video classified as Trailer by TMDB
     youtubeTrailers[0] ||
-    // 4. Fall back to official teaser only if no trailer exists
     videos.find((v) => v.site === 'YouTube' && v.type === 'Teaser');
 
   return (
@@ -205,7 +251,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
           />
         )}
 
-        {/* Action Controls */}
+        {/* Top Controls */}
         <div style={{ position: 'absolute', top: '1.75rem', right: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', zIndex: 30 }}>
           <button
             onClick={handleShare}
@@ -298,7 +344,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   </p>
                 )}
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.5rem', color: '#a3a3a3', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.5rem', color: '#a3a3a3', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#22c55e', fontWeight: 700 }}>
                     <Star size={15} fill="#22c55e" />
                     {movie.vote_average ? movie.vote_average.toFixed(1) : '-'} / 10
@@ -315,7 +361,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
                   {movie.genres?.map((g) => (
                     <span
                       key={g.id}
@@ -323,9 +369,9 @@ export default function MovieDetailModal({ movieId, onClose }) {
                         background: 'rgba(18, 18, 18, 0.85)',
                         border: '1px solid #262626',
                         color: '#ffffff',
-                        padding: '5px 12px',
+                        padding: '4px 10px',
                         borderRadius: '6px',
-                        fontSize: '0.82rem',
+                        fontSize: '0.78rem',
                         fontWeight: 500,
                         backdropFilter: 'blur(6px)'
                       }}
@@ -335,17 +381,39 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   ))}
                 </div>
 
-                {/* Main Action Buttons */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {/* Compact Vertical Action Stack */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', width: 'fit-content', minWidth: '150px' }}>
+                  <button
+                    onClick={toggleWatched}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '7px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: isWatched ? '#22c55e' : 'rgba(18, 18, 18, 0.85)',
+                      color: isWatched ? '#000000' : '#ffffff',
+                      border: `1px solid ${isWatched ? '#22c55e' : '#262626'}`,
+                      backdropFilter: 'blur(6px)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Eye size={13} />
+                    <span>{isWatched ? 'Watched' : 'Mark Watched'}</span>
+                  </button>
+
                   <button
                     onClick={toggleWatchlist}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      fontSize: '0.88rem',
+                      gap: '0.45rem',
+                      padding: '7px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
                       fontWeight: 600,
                       cursor: 'pointer',
                       background: inWatchlist ? '#ffffff' : 'rgba(18, 18, 18, 0.85)',
@@ -355,8 +423,8 @@ export default function MovieDetailModal({ movieId, onClose }) {
                       transition: 'all 0.15s ease'
                     }}
                   >
-                    <Bookmark size={15} fill={inWatchlist ? '#000000' : 'none'} />
-                    {inWatchlist ? 'In Watchlist' : 'Watchlist'}
+                    <Bookmark size={13} fill={inWatchlist ? '#000000' : 'none'} />
+                    <span>{inWatchlist ? 'In Watchlist' : 'Watchlist'}</span>
                   </button>
 
                   {trailer && (
@@ -365,28 +433,30 @@ export default function MovieDetailModal({ movieId, onClose }) {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        fontSize: '0.88rem',
+                        gap: '0.45rem',
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
                         fontWeight: 600,
                         cursor: 'pointer',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        color: '#ffffff',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        color: '#d4d4d4',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
                         backdropFilter: 'blur(6px)',
                         transition: 'all 0.15s ease'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                        e.currentTarget.style.color = '#ffffff';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                        e.currentTarget.style.color = '#d4d4d4';
                       }}
                     >
-                      <Play size={15} fill="#ffffff" />
+                      <Play size={13} fill="currentColor" />
                       <span>Watch Trailer</span>
                     </button>
                   )}

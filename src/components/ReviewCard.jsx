@@ -143,39 +143,49 @@ export default function ReviewCard({
           )}
 
           {/* User Row + Rating */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
-            <div
-              onClick={handleUserClick}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-            >
-              <div style={{
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                background: '#1e1e1e',
-                border: '1px solid #2e2e2e',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                color: '#ffffff'
-              }}>
-                {initial}
-              </div>
-              <span
-                style={{
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  color: '#a3a3a3',
-                  transition: 'color 0.15s ease'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#a3a3a3')}
-              >
-                {username}
-              </span>
-            </div>
+<div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+  <div
+    onClick={handleUserClick}
+    style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer' }}
+  >
+    <div style={{
+      width: '22px',
+      height: '22px',
+      borderRadius: '50%',
+      background: '#1e1e1e',
+      border: '1px solid #2e2e2e',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '0.7rem',
+      fontWeight: 700,
+      color: '#ffffff',
+      overflow: 'hidden',
+      flexShrink: 0
+    }}>
+      {review.profiles?.avatar_url ? (
+        <img
+          src={review.profiles.avatar_url}
+          alt={username}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        initial
+      )}
+    </div>
+    <span
+      style={{
+        fontSize: '0.8rem',
+        fontWeight: 600,
+        color: '#a3a3a3',
+        transition: 'color 0.15s ease'
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+      onMouseLeave={(e) => (e.currentTarget.style.color = '#a3a3a3')}
+    >
+      {username}
+    </span>
+  </div>
 
             <span style={{ color: '#333333', fontSize: '0.7rem' }}>•</span>
             <StarRating rating={review.rating || 0} interactive={false} size={11} />
