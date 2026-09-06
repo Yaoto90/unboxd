@@ -52,7 +52,7 @@ export const isValidFilm = (movie, isSearch = false) => {
   return true;
 };
 
-// 1. Trending Week (Home Feed: strictly 18 titles, +4 added)
+// 1. Trending Week (Home Feed: strictly 18 titles)
 export const getTrendingMoviesWeek = async () => {
   try {
     const url1 = `${BASE_URL}/trending/movie/week?language=en-US&page=1`;
@@ -70,7 +70,62 @@ export const getTrendingMoviesWeek = async () => {
   }
 };
 
-// 2. Search Movies (30 titles, +2 added)
+// 1b. Top Rated Movies (Home Feed: strictly 18 titles)
+export const getTopRatedMovies = async () => {
+  try {
+    const url1 = `${BASE_URL}/movie/top_rated?language=en-US&page=1`;
+    const url2 = `${BASE_URL}/movie/top_rated?language=en-US&page=2`;
+
+    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
+    const data1 = res1.ok ? await res1.json() : { results: [] };
+    const data2 = res2.ok ? await res2.json() : { results: [] };
+
+    const merged = [...(data1.results || []), ...(data2.results || [])];
+    return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
+  } catch (err) {
+    console.error('getTopRatedMovies error:', err);
+    return [];
+  }
+};
+
+// 1c. In Theaters / Now Playing (Home Feed: strictly 18 titles)
+export const getNowPlayingMovies = async () => {
+  try {
+    const url1 = `${BASE_URL}/movie/now_playing?language=en-US&page=1`;
+    const url2 = `${BASE_URL}/movie/now_playing?language=en-US&page=2`;
+
+    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
+    const data1 = res1.ok ? await res1.json() : { results: [] };
+    const data2 = res2.ok ? await res2.json() : { results: [] };
+
+    const merged = [...(data1.results || []), ...(data2.results || [])];
+    return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
+  } catch (err) {
+    console.error('getNowPlayingMovies error:', err);
+    return [];
+  }
+};
+
+// 1d. Upcoming Movies (High-profile upcoming films: release date >= today sorted by popularity)
+export const getUpcomingMovies = async () => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const url1 = `${BASE_URL}/discover/movie?include_adult=false&language=en-US&page=1&sort_by=popularity.desc&primary_release_date.gte=${today}&with_original_language=en%7Cja%7Cko`;
+    const url2 = `${BASE_URL}/discover/movie?include_adult=false&language=en-US&page=2&sort_by=popularity.desc&primary_release_date.gte=${today}&with_original_language=en%7Cja%7Cko`;
+
+    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
+    const data1 = res1.ok ? await res1.json() : { results: [] };
+    const data2 = res2.ok ? await res2.json() : { results: [] };
+
+    const merged = [...(data1.results || []), ...(data2.results || [])];
+    return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
+  } catch (err) {
+    console.error('getUpcomingMovies error:', err);
+    return [];
+  }
+};
+
+// 2. Search Movies (30 titles)
 export const searchMovies = async (query, page = 1) => {
   try {
     const p1 = page * 2 - 1;
@@ -107,7 +162,7 @@ export const searchMovies = async (query, page = 1) => {
   }
 };
 
-// 3. Discover Filtered Movies (30 titles, +2 added)
+// 3. Discover Filtered Movies (30 titles)
 export const discoverLetterboxd = async ({
   decade = '',
   ratingOrder = '',
