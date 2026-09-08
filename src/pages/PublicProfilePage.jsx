@@ -19,17 +19,6 @@ export default function PublicProfilePage({ onSelectMovie }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Redirect to personal profile dashboard if user navigates to their own public URL
-  useEffect(() => {
-    if (
-      username &&
-      authProfile?.username &&
-      authProfile.username.toLowerCase() === username.toLowerCase()
-    ) {
-      navigate('/profile', { replace: true });
-    }
-  }, [username, authProfile, navigate]);
-
   useEffect(() => {
     async function loadUserData() {
       setLoading(true);
@@ -43,6 +32,12 @@ export default function PublicProfilePage({ onSelectMovie }) {
 
         if (profileErr || !profileData) {
           setError('User not found');
+          return;
+        }
+
+        // Redirect to personal dashboard only if this is truly your own profile (by id, not username string)
+        if (user && profileData.id === user.id) {
+          navigate('/profile', { replace: true });
           return;
         }
 
@@ -62,9 +57,34 @@ export default function PublicProfilePage({ onSelectMovie }) {
         ]);
 
         const allLists = listsRes.data || [];
-        setWatchlist(allLists.filter((item) => item.type === 'watchlist' || !item.type));
-        setWatched(allLists.filter((item) => item.type === 'watched'));
-        setReviews(reviewsRes.data || []);
+        const reviewsData = reviewsRes.data || [];
+
+        // Unified Watched list combining explicit watched entries and reviewed movies
+        const explicitWatched = allLists.filter((item) => item.type === 'watched');
+        const watchedMovieIds = new Set(explicitWatched.map((item) => Number(item.tmdb_movie_id)));
+
+        const implicitWatchedFromReviews = reviewsData
+          .filter((rev) => !watchedMovieIds.has(Number(rev.tmdb_movie_id)))
+          .map((rev) => ({
+            id: `rev-${rev.id}`,
+            tmdb_movie_id: rev.tmdb_movie_id,
+            movie_title: rev.movie_title,
+            movie_poster_path: rev.movie_poster_path,
+            type: 'watched',
+            created_at: rev.created_at
+          }));
+
+        const unifiedWatched = [...explicitWatched, ...implicitWatchedFromReviews];
+
+        // Filter Watchlist so it excludes anything watched
+        const allWatchedIds = new Set(unifiedWatched.map((item) => Number(item.tmdb_movie_id)));
+        const cleanWatchlist = allLists.filter(
+          (item) => (item.type === 'watchlist' || !item.type) && !allWatchedIds.has(Number(item.tmdb_movie_id))
+        );
+
+        setWatched(unifiedWatched);
+        setWatchlist(cleanWatchlist);
+        setReviews(reviewsData);
       } catch (err) {
         console.error('Failed to load user profile data:', err);
         setError('Failed to load profile');
@@ -74,7 +94,7 @@ export default function PublicProfilePage({ onSelectMovie }) {
     }
 
     loadUserData();
-  }, [username]);
+  }, [username, user, navigate]);
 
   const sortedReviews = useMemo(() => {
     const list = [...reviews];
@@ -191,7 +211,7 @@ export default function PublicProfilePage({ onSelectMovie }) {
           </div>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <h1 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>
                 {profile.username}
               </h1>
@@ -242,7 +262,7 @@ export default function PublicProfilePage({ onSelectMovie }) {
             </p>
           </div>
           <div style={{ textAlign: 'center', minWidth: '90px' }}>
-            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.1, display: 'block' }}>
+            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#22c55e', lineHeight: 1.1, display: 'block' }}>
               {averageRating}
             </span>
             <p style={{ margin: '6px 0 0 0', fontSize: '0.85rem', color: '#737373', fontWeight: 500 }}>

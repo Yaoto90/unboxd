@@ -86,9 +86,7 @@ export default function ReviewCard({
     }
 
     // Direct to personal dashboard if this is your own review
-    const isCurrentUser =
-      (user && review.user_id === user.id) ||
-      (authProfile?.username && authProfile.username.toLowerCase() === username.toLowerCase());
+    const isCurrentUser = Boolean(user && review.user_id === user.id);
 
     if (isCurrentUser) {
       navigate('/profile');

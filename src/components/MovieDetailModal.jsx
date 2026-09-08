@@ -21,20 +21,22 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
 
+  const numericMovieId = Number(movieId);
+
   // 1. Primary Data Fetching Effect
   useEffect(() => {
-    if (!movieId) return;
+    if (!numericMovieId) return;
 
     async function loadData() {
       setLoading(true);
       try {
-        const details = await getMovieDetails(movieId);
+        const details = await getMovieDetails(numericMovieId);
         setMovie(details);
 
         const { data: revData } = await supabase
           .from('reviews')
           .select('*, profiles(username, avatar_url), review_likes(user_id)')
-          .eq('tmdb_movie_id', movieId)
+          .eq('tmdb_movie_id', numericMovieId)
           .order('created_at', { ascending: false });
 
         setReviews(revData || []);
@@ -44,24 +46,45 @@ export default function MovieDetailModal({ movieId, onClose }) {
             .from('watchlists')
             .select('id, type')
             .eq('user_id', user.id)
-            .eq('tmdb_movie_id', movieId);
+            .eq('tmdb_movie_id', numericMovieId);
 
-          if (listData) {
-            setInWatchlist(listData.some((item) => item.type === 'watchlist' || !item.type));
-            setIsWatched(listData.some((item) => item.type === 'watched'));
-          }
+          const hasWatchedRow = listData?.some((item) => item.type === 'watched');
+          const hasUserReviewed = revData?.some((r) => r.user_id === user.id);
+          const hasWatchlistRow = listData?.some((item) => item.type === 'watchlist' || !item.type);
+
+          const watchedStatus = Boolean(hasWatchedRow || hasUserReviewed);
+          setIsWatched(watchedStatus);
+          setInWatchlist(!watchedStatus && Boolean(hasWatchlistRow));
         }
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load movie details:', err);
       } finally {
         setLoading(false);
       }
     }
 
     loadData();
-  }, [movieId, user]);
+  }, [numericMovieId, user]);
 
-  // 2. Auto-scroll to review if ?review=<id> is in URL (Hook must sit at component level)
+  // 2. Synchronization listener when movie status is updated outside (e.g. from ProfilePage)
+  useEffect(() => {
+    const handleStatusChange = (e) => {
+      const { movieId: updatedId, isWatched: newWatched, reviewDeleted } = e.detail || {};
+      if (Number(updatedId) === numericMovieId) {
+        if (typeof newWatched === 'boolean') {
+          setIsWatched(newWatched);
+        }
+        if (reviewDeleted && user) {
+          setReviews((prev) => prev.filter((r) => r.user_id !== user.id));
+        }
+      }
+    };
+
+    window.addEventListener('unboxd:movie-status-changed', handleStatusChange);
+    return () => window.removeEventListener('unboxd:movie-status-changed', handleStatusChange);
+  }, [numericMovieId, user]);
+
+  // 3. Auto-scroll to review if ?review=<id> is in URL
   useEffect(() => {
     if (loading || reviews.length === 0) return;
 
@@ -119,15 +142,15 @@ export default function MovieDetailModal({ movieId, onClose }) {
         .from('watchlists')
         .delete()
         .eq('user_id', user.id)
-        .eq('tmdb_movie_id', movieId)
+        .eq('tmdb_movie_id', numericMovieId)
         .or('type.eq.watchlist,type.is.null');
       setInWatchlist(false);
     } else {
       await supabase.from('watchlists').insert({
         user_id: user.id,
-        tmdb_movie_id: movie.id,
-        movie_title: movie.title,
-        movie_poster_path: movie.poster_path,
+        tmdb_movie_id: numericMovieId,
+        movie_title: movie?.title || '',
+        movie_poster_path: movie?.poster_path || '',
         type: 'watchlist'
       });
       setInWatchlist(true);
@@ -138,21 +161,36 @@ export default function MovieDetailModal({ movieId, onClose }) {
     if (!user) return alert('Please sign in to log watched films.');
 
     if (isWatched) {
+      // Remove from watchlists only, keeping any existing review intact
       await supabase
         .from('watchlists')
         .delete()
         .eq('user_id', user.id)
-        .eq('tmdb_movie_id', movieId)
+        .eq('tmdb_movie_id', numericMovieId)
         .eq('type', 'watched');
+
       setIsWatched(false);
+
+      window.dispatchEvent(
+        new CustomEvent('unboxd:movie-status-changed', {
+          detail: { movieId: numericMovieId, isWatched: false, reviewDeleted: false }
+        })
+      );
     } else {
-      await supabase.from('watchlists').insert({
+      const { error: watchedInsertError } = await supabase.from('watchlists').insert({
         user_id: user.id,
-        tmdb_movie_id: movie.id,
-        movie_title: movie.title,
-        movie_poster_path: movie.poster_path,
+        tmdb_movie_id: numericMovieId,
+        movie_title: movie?.title || '',
+        movie_poster_path: movie?.poster_path || '',
         type: 'watched'
       });
+
+      if (watchedInsertError) {
+        console.error('Failed to mark as watched:', watchedInsertError);
+        alert(watchedInsertError.message || 'Failed to mark as watched.');
+        return;
+      }
+
       setIsWatched(true);
 
       if (inWatchlist) {
@@ -160,10 +198,16 @@ export default function MovieDetailModal({ movieId, onClose }) {
           .from('watchlists')
           .delete()
           .eq('user_id', user.id)
-          .eq('tmdb_movie_id', movieId)
+          .eq('tmdb_movie_id', numericMovieId)
           .or('type.eq.watchlist,type.is.null');
         setInWatchlist(false);
       }
+
+      window.dispatchEvent(
+        new CustomEvent('unboxd:movie-status-changed', {
+          detail: { movieId: numericMovieId, isWatched: true, reviewDeleted: false }
+        })
+      );
     }
   };
 
@@ -173,47 +217,85 @@ export default function MovieDetailModal({ movieId, onClose }) {
     if (!reviewText.trim()) return;
 
     setSubmitting(true);
-    const { data, error } = await supabase
-      .from('reviews')
-      .insert({
-        user_id: user.id,
-        tmdb_movie_id: movie.id,
-        movie_title: movie.title,
-        movie_poster_path: movie.poster_path,
-        rating: parseFloat(rating),
-        review_text: reviewText
-      })
-      .select('*, profiles(username, avatar_url), review_likes(user_id)')
-      .single();
-
-    if (!error && data) {
-      setReviews([data, ...reviews]);
-      setReviewText('');
-
-      if (!isWatched) {
-        await supabase.from('watchlists').insert({
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert({
           user_id: user.id,
-          tmdb_movie_id: movie.id,
-          movie_title: movie.title,
-          movie_poster_path: movie.poster_path,
-          type: 'watched'
-        });
+          tmdb_movie_id: numericMovieId,
+          movie_title: movie?.title || '',
+          movie_poster_path: movie?.poster_path || '',
+          rating: parseFloat(rating),
+          review_text: reviewText
+        })
+        .select('*, profiles(username, avatar_url), review_likes(user_id)')
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setReviews([data, ...reviews]);
+        setReviewText('');
+
+        await supabase
+          .from('watchlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('tmdb_movie_id', numericMovieId)
+          .or('type.eq.watchlist,type.is.null');
+
+        const { data: existingWatched } = await supabase
+          .from('watchlists')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('tmdb_movie_id', numericMovieId)
+          .eq('type', 'watched')
+          .maybeSingle();
+
+        if (!existingWatched) {
+          await supabase.from('watchlists').insert({
+            user_id: user.id,
+            tmdb_movie_id: numericMovieId,
+            movie_title: movie?.title || '',
+            movie_poster_path: movie?.poster_path || '',
+            type: 'watched'
+          });
+        }
+
         setIsWatched(true);
+        setInWatchlist(false);
+
+        window.dispatchEvent(
+          new CustomEvent('unboxd:movie-status-changed', {
+            detail: { movieId: numericMovieId, isWatched: true, reviewDeleted: false }
+          })
+        );
       }
-    } else if (error) {
-      alert(error.message);
+    } catch (err) {
+      alert(err.message || 'Failed to submit review');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleDeleteReview = async (reviewId) => {
     const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
     if (!error) {
       setReviews(reviews.filter((r) => r.id !== reviewId));
+      window.dispatchEvent(
+        new CustomEvent('unboxd:movie-status-changed', {
+          detail: { movieId: numericMovieId, reviewDeleted: true }
+        })
+      );
     }
   };
 
   if (!movieId) return null;
+
+  // UnBoxd Community Average Rating
+  const communityAverage = reviews.length > 0
+    ? (reviews.reduce((acc, curr) => acc + Number(curr.rating || 0), 0) / reviews.length).toFixed(1)
+    : null;
 
   const posterSrc = movie ? getImageUrl(movie.poster_path, 'w500') : '';
   const backdropSrc = movie?.backdrop_path ? getImageUrl(movie.backdrop_path, 'original') : null;
@@ -382,19 +464,37 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   </p>
                 )}
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2rem', color: '#a3a3a3', fontSize: '1.02rem', marginBottom: '1.75rem' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#22c55e', fontWeight: 800, fontSize: '1.1rem' }}>
-                    <Star size={18} fill="#22c55e" />
-                    {movie.vote_average ? movie.vote_average.toFixed(1) : '-'} / 10
-                  </span>
-                  {movie.runtime > 0 && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={17} />
-                      {movie.runtime}m
+                {/* Rating & Metadata Row with Community Score */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.5rem', color: '#a3a3a3', fontSize: '1rem', marginBottom: '1.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#22c55e', fontWeight: 800, fontSize: '1.15rem' }}>
+                      <Star size={18} fill="#22c55e" />
+                      {communityAverage ? `${communityAverage} / 5` : 'No ratings'}
                     </span>
+                    <span style={{ fontSize: '0.82rem', color: '#737373', fontWeight: 500 }}>
+                      ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                    </span>
+                  </div>
+
+                  <span style={{ color: '#333333' }}>•</span>
+
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#e5e5e5', fontWeight: 600, fontSize: '0.95rem' }}>
+                    TMDB: <strong style={{ color: '#ffffff' }}>{movie.vote_average ? movie.vote_average.toFixed(1) : '-'}</strong>/10
+                  </span>
+
+                  {movie.runtime > 0 && (
+                    <>
+                      <span style={{ color: '#333333' }}>•</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Clock size={16} />
+                        {movie.runtime}m
+                      </span>
+                    </>
                   )}
+
+                  <span style={{ color: '#333333' }}>•</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calendar size={17} />
+                    <Calendar size={16} />
                     {movie.release_date || 'N/A'}
                   </span>
                 </div>

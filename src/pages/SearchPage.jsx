@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { searchMovies, discoverLetterboxd, getImageUrl } from '../services/tmdb';
 import SearchBrowseModal from '../components/SearchBrowseModal';
-import { Star, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Search, ChevronLeft, ChevronRight, SlidersHorizontal, Film } from 'lucide-react';
 
 function MovieCard({ movie, onSelect }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -15,16 +15,16 @@ function MovieCard({ movie, onSelect }) {
       onMouseLeave={() => setIsHovered(false)}
       style={{
         backgroundColor: '#0a0a0a',
-        borderRadius: '6px',
+        borderRadius: '8px',
         overflow: 'hidden',
         cursor: 'pointer',
-        border: `1px solid ${isHovered ? 'var(--border-hover, #3b82f6)' : 'var(--border-subtle, #27272a)'}`,
+        border: `1px solid ${isHovered ? '#3b82f6' : '#1e1e1e'}`,
         transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease',
         transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: isHovered ? '0 10px 25px rgba(0, 0, 0, 0.65)' : 'none'
+        boxShadow: isHovered ? '0 10px 25px rgba(0, 0, 0, 0.7)' : 'none'
       }}
     >
-      <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', overflow: 'hidden', background: '#18181b' }}>
+      <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', overflow: 'hidden', background: '#121212' }}>
         <img
           src={getImageUrl(movie.poster_path)}
           alt={movie.title || 'Poster'}
@@ -41,22 +41,22 @@ function MovieCard({ movie, onSelect }) {
 
       <div style={{ padding: '0.75rem 0.85rem' }}>
         <h3 style={{
-          fontSize: '0.9rem',
+          fontSize: '0.88rem',
           margin: '0 0 0.35rem 0',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          color: isHovered ? '#ffffff' : '#e4e4e7',
-          fontWeight: 500,
+          color: isHovered ? '#ffffff' : '#e5e5e5',
+          fontWeight: 600,
           transition: 'color 0.15s ease'
         }}>
           {movie.title || 'Untitled'}
         </h3>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary, #71717a)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#737373' }}>
           <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', fontWeight: 600 }}>
-            <Star size={13} fill="#ffffff" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#22c55e', fontWeight: 700 }}>
+            <Star size={12} fill="#22c55e" />
             {movie.vote_average ? movie.vote_average.toFixed(1) : '-'}
           </span>
         </div>
@@ -67,11 +67,10 @@ function MovieCard({ movie, onSelect }) {
 
 export default function SearchPage({ onSelectMovie }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   const type = searchParams.get('type') || 'popular';
   const value = searchParams.get('value') || 'all';
-  const label = searchParams.get('label') || 'POPULAR / ALL TIME';
+  const label = searchParams.get('label') || 'POPULAR FILMS';
   const page = parseInt(searchParams.get('page') || '1', 10);
 
   const [movies, setMovies] = useState([]);
@@ -118,50 +117,52 @@ export default function SearchPage({ onSelectMovie }) {
   };
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem 2rem 5rem 2rem' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '2rem 1.5rem 6rem 1.5rem' }}>
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingBottom: '1rem',
+        paddingBottom: '1.25rem',
         borderBottom: '1px solid #1f1f23',
-        marginBottom: '1.5rem'
+        marginBottom: '2rem',
+        flexWrap: 'wrap',
+        gap: '1rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: '#ffffff', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <Film size={18} color="#22c55e" />
+          <h1 style={{ color: '#ffffff', fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
             {label}
-          </span>
+          </h1>
         </div>
 
-        <div onClick={() => setIsModalOpen(true)} style={{ position: 'relative', width: '220px', cursor: 'pointer' }}>
-          <input
-            type="text"
-            readOnly
-            placeholder="Search & Browse..."
-            style={{
-              width: '100%',
-              padding: '7px 32px 7px 12px',
-              background: '#0a0a0a',
-              border: '1px solid var(--border-subtle, #27272a)',
-              borderRadius: '6px',
-              color: '#ffffff',
-              fontSize: '0.85rem',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          />
-          <Search size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #71717a)' }} />
-        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: '#111111',
+            border: '1px solid #282828',
+            color: '#ffffff',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
+        >
+          <SlidersHorizontal size={14} /> Filter & Search
+        </button>
       </div>
 
-      {loading && <p style={{ textAlign: 'center', color: 'var(--text-muted, #71717a)', marginTop: '4rem', fontSize: '0.9rem' }}>Loading films...</p>}
-      {error && <p style={{ textAlign: 'center', color: '#ef4444', marginTop: '4rem', fontSize: '0.9rem' }}>{error}</p>}
+      {loading && <p style={{ textAlign: 'center', color: '#737373', marginTop: '5rem', fontSize: '1rem' }}>Querying TMDB archives...</p>}
+      {error && <p style={{ textAlign: 'center', color: '#ef4444', marginTop: '5rem', fontSize: '1rem' }}>{error}</p>}
       {!loading && !error && movies.length === 0 && (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted, #71717a)', marginTop: '4rem', fontSize: '0.9rem' }}>No matching films found.</p>
+        <p style={{ textAlign: 'center', color: '#737373', marginTop: '5rem', fontSize: '1rem' }}>No matching films found.</p>
       )}
 
       {!loading && !error && movies.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>
           {movies.map((movie) => (
             <MovieCard key={movie.id} movie={movie} onSelect={onSelectMovie} />
           ))}
@@ -174,9 +175,9 @@ export default function SearchPage({ onSelectMovie }) {
           justifyContent: 'center',
           alignItems: 'center',
           gap: '1.25rem',
-          marginTop: '3.5rem',
-          paddingTop: '1.5rem',
-          borderTop: '1px solid #1f1f23'
+          marginTop: '4rem',
+          paddingTop: '2rem',
+          borderTop: '1px solid #1a1a1a'
         }}>
           <button
             disabled={page <= 1}
@@ -186,18 +187,19 @@ export default function SearchPage({ onSelectMovie }) {
               alignItems: 'center',
               gap: '4px',
               background: '#111111',
-              border: '1px solid #1f1f23',
-              color: page <= 1 ? '#3f3f46' : '#ffffff',
-              padding: '6px 14px',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
+              border: '1px solid #262626',
+              color: page <= 1 ? '#404040' : '#ffffff',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 600,
               cursor: page <= 1 ? 'not-allowed' : 'pointer'
             }}
           >
-            <ChevronLeft size={14} /> Previous
+            <ChevronLeft size={16} /> Previous
           </button>
 
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #71717a)' }}>
+          <span style={{ fontSize: '0.85rem', color: '#8a8a8a' }}>
             Page <strong style={{ color: '#ffffff' }}>{page}</strong> of {totalPages}
           </span>
 
@@ -209,15 +211,16 @@ export default function SearchPage({ onSelectMovie }) {
               alignItems: 'center',
               gap: '4px',
               background: '#111111',
-              border: '1px solid #1f1f23',
-              color: page >= totalPages ? '#3f3f46' : '#ffffff',
-              padding: '6px 14px',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
+              border: '1px solid #262626',
+              color: page >= totalPages ? '#404040' : '#ffffff',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 600,
               cursor: page >= totalPages ? 'not-allowed' : 'pointer'
             }}
           >
-            Next <ChevronRight size={14} />
+            Next <ChevronRight size={16} />
           </button>
         </div>
       )}

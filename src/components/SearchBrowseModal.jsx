@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Search } from 'lucide-react';
+import { X, Search, Sparkles, Flame, Calendar, Film, Star } from 'lucide-react';
 
 const DECADES = [
   { id: '2020', label: '2020s' },
@@ -19,7 +19,7 @@ const POPULAR_OPTIONS = [
 ];
 
 const RATING_OPTIONS = [
-  { id: 'highest', label: 'Highest Rated' },
+  { id: 'highest', label: 'Top Rated' },
   { id: 'lowest', label: 'Lowest Rated' }
 ];
 
@@ -29,6 +29,7 @@ const GENRES = [
   { id: '16', name: 'Animation' },
   { id: '35', name: 'Comedy' },
   { id: '80', name: 'Crime' },
+  { id: '99', name: 'Documentary' },
   { id: '18', name: 'Drama' },
   { id: '14', name: 'Fantasy' },
   { id: '27', name: 'Horror' },
@@ -54,7 +55,7 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
     if (!query.trim()) return;
     const q = query.trim();
     setQuery('');
-    navigateToSearch('search', q, `SEARCH / "${q}"`);
+    navigateToSearch('search', q, `Search: "${q}"`);
   };
 
   return (
@@ -63,95 +64,109 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 1050,
+        backgroundColor: 'rgba(0, 0, 0, 0.92)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.5rem'
+        padding: '1.25rem'
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
-          maxWidth: '500px',
-          maxHeight: '85vh',
+          maxWidth: '560px',
+          maxHeight: '88vh',
           overflowY: 'auto',
           backgroundColor: '#0a0a0a',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '10px',
-          padding: '1.5rem',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.95)',
+          border: '1px solid #222222',
+          borderRadius: '16px',
+          padding: '1.8rem',
+          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.98)',
           color: '#ffffff'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '1px', color: '#71717a' }}>
-            FIND & BROWSE
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={16} color="#22c55e" />
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.08em', color: '#a3a3a3', textTransform: 'uppercase' }}>
+              Discover Films
+            </span>
+          </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             style={{
-              background: '#18181b',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-secondary)',
-              borderRadius: '6px',
-              padding: '6px',
-              cursor: 'pointer',
-              display: 'flex'
+              background: '#141414',
+              border: '1px solid #262626',
+              color: '#8a8a8a',
+              borderRadius: '8px',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
             }}
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSearchSubmit} style={{ marginBottom: '1.5rem' }}>
+        <form onSubmit={handleSearchSubmit} style={{ marginBottom: '1.75rem' }}>
           <div style={{ position: 'relative' }}>
             <input
               type="text"
               autoFocus
-              placeholder="Search by title..."
+              placeholder="Search by title, director, keyword..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{
                 width: '100%',
-                padding: '9px 38px 9px 12px',
-                background: '#111111',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '6px',
+                padding: '12px 42px 12px 14px',
+                background: '#121212',
+                border: '1px solid #262626',
+                borderRadius: '10px',
                 color: '#ffffff',
-                fontSize: '0.85rem',
-                outline: 'none'
+                fontSize: '0.95rem',
+                outline: 'none',
+                boxSizing: 'border-box'
               }}
             />
             <button
               type="submit"
+              aria-label="Execute search"
               style={{
                 position: 'absolute',
-                right: '10px',
+                right: '12px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 background: 'none',
                 border: 'none',
-                color: 'var(--text-secondary)',
+                color: '#737373',
                 cursor: 'pointer'
               }}
             >
-              <Search size={15} />
+              <Search size={17} />
             </button>
           </div>
         </form>
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <span style={sectionHeaderStyle}>YEAR</span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.45rem' }}>
+        {/* DECADES */}
+        <div style={{ marginBottom: '1.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.6rem' }}>
+            <Calendar size={13} color="#737373" />
+            <span style={sectionHeaderStyle}>RELEASE ERA</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.5rem' }}>
             {DECADES.map((d) => (
               <button
                 key={d.id}
                 type="button"
-                onClick={() => navigateToSearch('decade', d.id, `FILMS OF THE ${d.label}`)}
+                onClick={() => navigateToSearch('decade', d.id, `${d.label} Cinema`)}
                 style={itemButtonStyle}
               >
                 {d.label}
@@ -160,14 +175,18 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <span style={sectionHeaderStyle}>POPULAR</span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
+        {/* POPULAR TIME */}
+        <div style={{ marginBottom: '1.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.6rem' }}>
+            <Flame size={13} color="#f97316" />
+            <span style={sectionHeaderStyle}>POPULARITY</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.5rem' }}>
             {POPULAR_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => navigateToSearch('popular', opt.id, `POPULAR / ${opt.label.toUpperCase()}`)}
+                onClick={() => navigateToSearch('popular', opt.id, `Popular (${opt.label})`)}
                 style={itemButtonStyle}
               >
                 {opt.label}
@@ -176,14 +195,18 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <span style={sectionHeaderStyle}>RATING</span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.45rem' }}>
+        {/* RATING */}
+        <div style={{ marginBottom: '1.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.6rem' }}>
+            <Star size={13} color="#eab308" />
+            <span style={sectionHeaderStyle}>CRITICAL ACCLAIM</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
             {RATING_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => navigateToSearch('rating', opt.id, `${opt.label.toUpperCase()}`)}
+                onClick={() => navigateToSearch('rating', opt.id, opt.label)}
                 style={itemButtonStyle}
               >
                 {opt.label}
@@ -192,14 +215,18 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </div>
 
+        {/* GENRES */}
         <div>
-          <span style={sectionHeaderStyle}>GENRE</span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.45rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.6rem' }}>
+            <Film size={13} color="#38bdf8" />
+            <span style={sectionHeaderStyle}>GENRE</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: '0.5rem' }}>
             {GENRES.map((g) => (
               <button
                 key={g.id}
                 type="button"
-                onClick={() => navigateToSearch('genre', g.id, `${g.name.toUpperCase()} FILMS`)}
+                onClick={() => navigateToSearch('genre', g.id, `${g.name} Films`)}
                 style={itemButtonStyle}
               >
                 {g.name}
@@ -213,22 +240,21 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
 }
 
 const sectionHeaderStyle = {
-  display: 'block',
-  fontSize: '0.68rem',
-  fontWeight: 700,
-  letterSpacing: '1px',
-  color: '#52525b',
-  marginBottom: '0.5rem'
+  fontSize: '0.72rem',
+  fontWeight: 800,
+  letterSpacing: '0.08em',
+  color: '#8a8a8a'
 };
 
 const itemButtonStyle = {
   background: '#111111',
-  border: '1px solid #1f1f23',
-  color: '#e4e4e7',
-  padding: '7px 8px',
-  borderRadius: '5px',
-  fontSize: '0.75rem',
-  fontWeight: 500,
+  border: '1px solid #222222',
+  color: '#d4d4d4',
+  padding: '8px 10px',
+  borderRadius: '7px',
+  fontSize: '0.8rem',
+  fontWeight: 600,
   textAlign: 'center',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  transition: 'all 0.15s ease'
 };
