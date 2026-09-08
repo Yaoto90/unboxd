@@ -136,7 +136,8 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
         const { data } = await supabase
           .from('watchlists')
           .select('tmdb_movie_id')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .or('type.eq.watchlist,type.is.null');
 
         if (data) {
           setWatchlistIds(new Set(data.map((item) => Number(item.tmdb_movie_id))));
@@ -217,8 +218,17 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
           .from('watchlists')
           .delete()
           .eq('user_id', user.id)
-          .eq('tmdb_movie_id', movieId);
+          .eq('tmdb_movie_id', movieId)
+          .or('type.eq.watchlist,type.is.null');
       } else {
+        // Adding to watchlist should clear any existing "watched" status for this movie
+        await supabase
+          .from('watchlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('tmdb_movie_id', movieId)
+          .eq('type', 'watched');
+
         await supabase.from('watchlists').insert({
           user_id: user.id,
           tmdb_movie_id: movieId,

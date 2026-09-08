@@ -146,6 +146,14 @@ export default function MovieDetailModal({ movieId, onClose }) {
         .or('type.eq.watchlist,type.is.null');
       setInWatchlist(false);
     } else {
+      // Adding to watchlist should clear any existing "watched" status for this movie
+      await supabase
+        .from('watchlists')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('tmdb_movie_id', numericMovieId)
+        .eq('type', 'watched');
+
       await supabase.from('watchlists').insert({
         user_id: user.id,
         tmdb_movie_id: numericMovieId,
@@ -154,6 +162,15 @@ export default function MovieDetailModal({ movieId, onClose }) {
         type: 'watchlist'
       });
       setInWatchlist(true);
+
+      if (isWatched) {
+        setIsWatched(false);
+        window.dispatchEvent(
+          new CustomEvent('unboxd:movie-status-changed', {
+            detail: { movieId: numericMovieId, isWatched: false, reviewDeleted: false }
+          })
+        );
+      }
     }
   };
 
