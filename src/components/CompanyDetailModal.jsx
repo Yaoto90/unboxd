@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { getPersonDetails, getPersonMovieCredits, getImageUrl } from '../services/tmdb';
-import { X, Star, Calendar, MapPin, Clapperboard, ChevronDown } from 'lucide-react';
+import { getCompanyDetails, getCompanyMovies, getImageUrl } from '../services/tmdb';
+import { X, Star, MapPin, Globe, Building2, ChevronDown } from 'lucide-react';
 import SkeletonGrid from './SkeletonGrid';
-import styles from './CSS/PersonDetailModal.module.css';
+import styles from './CSS/CompanyDetailModal.module.css';
 
 const GENRE_MAP = {
   28: 'Action',
@@ -26,23 +26,56 @@ const GENRE_MAP = {
   37: 'Western'
 };
 
-function PersonMovieCard({ film, onSelect }) {
+function CompanyMovieCard({ film, onSelect }) {
   if (!film) return null;
 
   return (
-    <div onClick={() => onSelect(film.id)} className={styles.card}>
-      <div className={styles.cardPosterWrap}>
+    <div
+      onClick={() => onSelect(film.id)}
+      style={{
+        backgroundColor: '#0a0a0a',
+        borderRadius: '6px',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        border: '1px solid #1e1e1e',
+        transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease',
+        position: 'relative'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.borderColor = '#383838';
+        e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.65)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.borderColor = '#1e1e1e';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    >
+      <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', overflow: 'hidden', background: '#121212' }}>
         <img
           src={getImageUrl(film.poster_path)}
           alt={film.title || 'Poster'}
-          className={styles.cardPoster}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
       </div>
 
-      <div className={styles.cardBody}>
-        <h3 className={styles.cardTitle}>{film.title || 'Untitled'}</h3>
+      <div style={{ padding: '0.75rem 0.85rem' }}>
+        <h3
+          style={{
+            fontSize: '0.9rem',
+            margin: '0 0 0.35rem 0',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            color: '#e5e5e5',
+            fontWeight: 500
+          }}
+        >
+          {film.title || 'Untitled'}
+        </h3>
 
-        <div className={styles.cardMeta}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#737373' }}>
           <span>{film.release_date ? film.release_date.split('-')[0] : 'N/A'}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', fontWeight: 600 }}>
             <Star size={13} fill="#ffffff" />
@@ -54,9 +87,9 @@ function PersonMovieCard({ film, onSelect }) {
   );
 }
 
-export default function PersonDetailModal({ personId, onClose, onSelectMovie }) {
-  const [person, setPerson] = useState(null);
-  const [credits, setCredits] = useState(null);
+export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }) {
+  const [company, setCompany] = useState(null);
+  const [films, setFilms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -87,51 +120,39 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
   }, []);
 
   useEffect(() => {
-    if (!personId) return;
+    if (!companyId) return;
 
     let isMounted = true;
-    async function loadPersonData() {
+    async function loadCompanyData() {
       setLoading(true);
       setError(null);
       try {
-        const [detailsData, creditsData] = await Promise.all([
-          getPersonDetails(personId),
-          getPersonMovieCredits(personId)
+        const [compData, filmsData] = await Promise.all([
+          getCompanyDetails(companyId),
+          getCompanyMovies(companyId)
         ]);
         if (isMounted) {
-          setPerson(detailsData);
-          setCredits(creditsData);
+          setCompany(compData);
+          setFilms(filmsData);
         }
       } catch (err) {
-        console.error('Failed to load person data:', err);
-        if (isMounted) setError(err.message || 'Failed to load details');
+        console.error('Failed to load company data:', err);
+        if (isMounted) setError(err.message || 'Failed to load studio details');
       } finally {
         if (isMounted) setLoading(false);
       }
     }
 
-    loadPersonData();
+    loadCompanyData();
 
     return () => {
       isMounted = false;
     };
-  }, [personId]);
-
-  const allFilms = useMemo(() => {
-    if (!credits) return [];
-    const combined = [...(credits.cast || []), ...(credits.crew || [])];
-    const map = new Map();
-    combined.forEach((film) => {
-      if (film.id && film.poster_path && !map.has(film.id)) {
-        map.set(film.id, film);
-      }
-    });
-    return Array.from(map.values());
-  }, [credits]);
+  }, [companyId]);
 
   const decadeGroups = useMemo(() => {
     const map = new Map();
-    allFilms.forEach((film) => {
+    films.forEach((film) => {
       if (film.release_date) {
         const yr = parseInt(film.release_date.split('-')[0], 10);
         if (!isNaN(yr)) {
@@ -148,11 +169,11 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
         decade,
         years: Array.from(yearSet).sort((a, b) => b - a)
       }));
-  }, [allFilms]);
+  }, [films]);
 
   const availableGenres = useMemo(() => {
     const genreIds = new Set();
-    allFilms.forEach((film) => {
+    films.forEach((film) => {
       if (Array.isArray(film.genre_ids)) {
         film.genre_ids.forEach((gid) => genreIds.add(gid));
       }
@@ -161,10 +182,10 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
       .filter((gid) => GENRE_MAP[gid])
       .map((gid) => ({ id: gid, name: GENRE_MAP[gid] }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [allFilms]);
+  }, [films]);
 
   const filteredFilms = useMemo(() => {
-    let result = [...allFilms];
+    let result = [...films];
 
     if (eraFilter.type === 'decade') {
       const dec = parseInt(eraFilter.value, 10);
@@ -205,7 +226,7 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
     });
 
     return result;
-  }, [allFilms, eraFilter, selectedGenre, sortBy]);
+  }, [films, eraFilter, selectedGenre, sortBy]);
 
   const sortLabels = {
     popularity: 'Popularity',
@@ -218,7 +239,7 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
 
   const isSortActive = sortBy !== 'popularity';
 
-  if (!personId) return null;
+  if (!companyId) return null;
 
   return (
     <div onClick={onClose} className={styles.backdrop}>
@@ -229,12 +250,11 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
 
         {loading ? (
           <div style={{ marginTop: '2rem' }}>
-            <div style={{ display: 'flex', gap: '2.5rem', marginBottom: '2.5rem' }}>
-              <div className="skeleton-box" style={{ width: '190px', height: '260px', borderRadius: '12px' }} />
+            <div style={{ display: 'flex', gap: '2.5rem', marginBottom: '2.5rem', alignItems: 'center' }}>
+              <div className="skeleton-box" style={{ width: '150px', height: '150px', borderRadius: '12px' }} />
               <div style={{ flex: 1 }}>
-                <div className="skeleton-box" style={{ width: '50%', height: '40px', borderRadius: '8px', marginBottom: '1rem' }} />
-                <div className="skeleton-box" style={{ width: '70%', height: '20px', borderRadius: '6px', marginBottom: '1.5rem' }} />
-                <div className="skeleton-box" style={{ width: '100%', height: '80px', borderRadius: '8px' }} />
+                <div className="skeleton-box" style={{ width: '45%', height: '40px', borderRadius: '8px', marginBottom: '1rem' }} />
+                <div className="skeleton-box" style={{ width: '60%', height: '20px', borderRadius: '6px' }} />
               </div>
             </div>
             <SkeletonGrid count={12} minWidth="170px" />
@@ -243,52 +263,39 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
           <div style={{ textAlign: 'center', padding: '8rem 2rem', color: '#ef4444', fontSize: '1.15rem' }}>
             {error}
           </div>
-        ) : person ? (
+        ) : company ? (
           <div>
             <div className={styles.heroRow}>
-              <div className={styles.photoWrap}>
-                {person.profile_path ? (
-                  <img src={getImageUrl(person.profile_path, 'w342')} alt={person.name} className={styles.photo} />
+              <div className={styles.logoWrap}>
+                {company.logo_path ? (
+                  <img src={getImageUrl(company.logo_path, 'w300')} alt={company.name} className={styles.logo} />
                 ) : (
-                  <div className={styles.noPhoto}>No Photo</div>
+                  <Building2 size={56} color="#000000" />
                 )}
               </div>
 
               <div className={styles.infoCol}>
-                <h2 className={styles.personName}>{person.name}</h2>
+                <h2 className={styles.companyName}>{company.name}</h2>
 
                 <div className={styles.metaRow}>
-                  {person.known_for_department && (
-                    <span className={styles.metaBadge}>
-                      <Clapperboard size={16} />{' '}
-                      {
-                        {
-                          Acting: 'Actor',
-                          Directing: 'Director',
-                          Writing: 'Writer',
-                          Production: 'Producer',
-                          Camera: 'Cinematographer',
-                          Sound: 'Composer / Sound',
-                          Editing: 'Editor'
-                        }[person.known_for_department] || person.known_for_department
-                      }
+                  <span className={styles.metaBadge}>
+                    <Building2 size={16} /> Production Studio
+                  </span>
+                  {company.origin_country && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <MapPin size={16} /> {company.origin_country}
                     </span>
                   )}
-                  {person.birthday && (
-                    <span className={styles.metaItem}>
-                      <Calendar size={16} /> Born {person.birthday}
-                    </span>
-                  )}
-                  {person.place_of_birth && (
-                    <span className={styles.metaItem}>
-                      <MapPin size={16} /> {person.place_of_birth}
-                    </span>
+                  {company.homepage && (
+                    <a href={company.homepage} target="_blank" rel="noreferrer" className={styles.metaLink}>
+                      <Globe size={16} /> Website
+                    </a>
                   )}
                 </div>
 
-                <p className={styles.biography}>
-                  {person.biography || 'No biography available for this person.'}
-                </p>
+                {company.description && (
+                  <p className={styles.description}>{company.description}</p>
+                )}
               </div>
             </div>
 
@@ -296,21 +303,38 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
             <div className={styles.filterBar}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em' }}>
-                  FILMS
+                  PRODUCTIONS
                 </span>
                 <span style={{ fontSize: '0.82rem', color: '#737373', fontWeight: 600 }}>
                   ({filteredFilms.length})
                 </span>
               </div>
 
-              <div className={styles.filterGroup}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
                 {/* 1. YEAR / DECADE CASCADE FILTER */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative' }} ref={yearRef}>
-                  <span className={styles.filterLabel}>YEAR</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#737373', letterSpacing: '0.05em' }}>
+                    YEAR
+                  </span>
+                  
                   <button
                     type="button"
                     onClick={() => setIsYearMenuOpen(!isYearMenuOpen)}
-                    className={`${styles.filterTrigger} ${eraFilter.type !== 'all' ? styles.filterTriggerActive : ''}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: eraFilter.type !== 'all' ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${eraFilter.type !== 'all' ? '#ffffff' : 'rgba(255, 255, 255, 0.12)'}`,
+                      color: eraFilter.type !== 'all' ? '#000000' : '#d4d4d4',
+                      borderRadius: '7px',
+                      padding: '5px 10px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      backdropFilter: 'blur(8px)',
+                      transition: 'all 0.15s ease'
+                    }}
                   >
                     <span>{eraFilter.label}</span>
                     <ChevronDown size={13} style={{ transform: isYearMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
@@ -454,11 +478,23 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
 
                 {/* 2. GENRE FILTER */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative' }} ref={genreRef}>
-                  <span className={styles.filterLabel}>GENRE</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#737373', letterSpacing: '0.05em' }}>GENRE</span>
                   <button
                     type="button"
                     onClick={() => setIsGenreMenuOpen(!isGenreMenuOpen)}
-                    className={`${styles.filterTrigger} ${selectedGenre !== 'all' ? styles.filterTriggerActive : ''}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: selectedGenre !== 'all' ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${selectedGenre !== 'all' ? '#ffffff' : 'rgba(255, 255, 255, 0.12)'}`,
+                      color: selectedGenre !== 'all' ? '#000000' : '#d4d4d4',
+                      borderRadius: '7px',
+                      padding: '5px 10px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
                   >
                     <span>{selectedGenre === 'all' ? 'All Genres' : availableGenres.find((g) => String(g.id) === selectedGenre)?.name || 'Genre'}</span>
                     <ChevronDown size={13} style={{ transform: isGenreMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
@@ -502,11 +538,23 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
 
                 {/* 3. SORT BY */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative' }} ref={sortRef}>
-                  <span className={styles.filterLabel}>SORT BY</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#737373', letterSpacing: '0.05em' }}>SORT BY</span>
                   <button
                     type="button"
                     onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
-                    className={`${styles.filterTrigger} ${isSortActive ? styles.filterTriggerActive : ''}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: isSortActive ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${isSortActive ? '#ffffff' : 'rgba(255, 255, 255, 0.12)'}`,
+                      color: isSortActive ? '#000000' : '#d4d4d4',
+                      borderRadius: '7px',
+                      padding: '5px 10px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
                   >
                     <span>{sortLabels[sortBy] || 'Sort'}</span>
                     <ChevronDown size={13} style={{ transform: isSortMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
@@ -538,7 +586,7 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
 
             <div className={styles.grid}>
               {filteredFilms.map((film) => (
-                <PersonMovieCard key={film.id} film={film} onSelect={onSelectMovie} />
+                <CompanyMovieCard key={film.id} film={film} onSelect={onSelectMovie} />
               ))}
             </div>
           </div>

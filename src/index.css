@@ -77,3 +77,19 @@ body {
   border-color: var(--text-secondary);
   background: #18181b;
 }
+
+@keyframes unboxd-shimmer {
+  0% {
+    background-color: #111111;
+  }
+  50% {
+    background-color: #1c1c1c;
+  }
+  100% {
+    background-color: #111111;
+  }
+}
+
+.skeleton-box {
+  animation: unboxd-shimmer 1.5s ease-in-out infinite;
+}

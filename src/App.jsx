@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import SearchBrowseModal from './components/SearchBrowseModal';
 import ReviewCard from './components/ReviewCard';
+import SkeletonGrid from './components/SkeletonGrid';
 import { supabase } from './supabaseClient';
 import {
   getTrendingMoviesWeek,
@@ -18,43 +19,21 @@ import {
 } from './services/tmdb';
 import { Star, Search, Flame, Film, Clock, MessageSquareQuote, Bookmark } from 'lucide-react';
 import PublicProfilePage from './pages/PublicProfilePage';
+import styles from './App.module.css';
 
 function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
-  const [isHovered, setIsHovered] = useState(false);
   if (!movie) return null;
 
   return (
-    <div
-      onClick={() => onSelect(movie.id)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        backgroundColor: '#0a0a0a',
-        borderRadius: '6px',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        border: `1px solid ${isHovered ? '#383838' : '#1e1e1e'}`,
-        transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease',
-        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: isHovered ? '0 10px 25px rgba(0, 0, 0, 0.65)' : 'none',
-        position: 'relative'
-      }}
-    >
-      <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', overflow: 'hidden', background: '#121212' }}>
+    <div className={styles.card} onClick={() => onSelect(movie.id)}>
+      <div className={styles.posterWrap}>
         <img
           src={getImageUrl(movie.poster_path)}
           alt={movie.title || 'Poster'}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            transition: 'transform 0.2s ease',
-            transform: isHovered ? 'scale(1.02)' : 'scale(1)'
-          }}
+          className={styles.poster}
         />
 
-        {/* Quick-Watchlist Button: Visible strictly on hover */}
+        {/* Quick-Watchlist Button: Visible strictly on hover via CSS */}
         {onToggleWatchlist && (
           <button
             onClick={(e) => {
@@ -62,50 +41,19 @@ function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
               onToggleWatchlist(movie);
             }}
             title={isWatchlisted ? 'Remove from Watchlist' : 'Add to Watchlist'}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              background: isWatchlisted ? '#ffffff' : 'rgba(10, 10, 10, 0.85)',
-              border: `1px solid ${isWatchlisted ? '#ffffff' : '#262626'}`,
-              color: isWatchlisted ? '#000000' : '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              opacity: isHovered ? 1 : 0,
-              transform: isHovered ? 'scale(1)' : 'scale(0.85)',
-              pointerEvents: isHovered ? 'auto' : 'none',
-              transition: 'opacity 0.15s ease, transform 0.15s ease, background 0.15s ease',
-              backdropFilter: 'blur(4px)',
-              zIndex: 10
-            }}
+            className={`${styles.watchlistBtn} ${isWatchlisted ? styles.watchlistBtnActive : ''}`}
           >
             <Bookmark size={14} fill={isWatchlisted ? '#000000' : 'none'} />
           </button>
         )}
       </div>
 
-      <div style={{ padding: '0.75rem 0.85rem' }}>
-        <h3 style={{
-          fontSize: '0.9rem',
-          margin: '0 0 0.35rem 0',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          color: isHovered ? '#ffffff' : '#e5e5e5',
-          fontWeight: 500,
-          transition: 'color 0.15s ease'
-        }}>
-          {movie.title || 'Untitled'}
-        </h3>
+      <div className={styles.cardBody}>
+        <h3 className={styles.cardTitle}>{movie.title || 'Untitled'}</h3>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#737373' }}>
+        <div className={styles.cardMeta}>
           <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', fontWeight: 600 }}>
+          <span className={styles.ratingBadge}>
             <Star size={13} fill="#ffffff" />
             {movie.vote_average ? movie.vote_average.toFixed(1) : '-'}
           </span>
@@ -257,20 +205,11 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
   ];
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem 2rem 5rem 2rem' }}>
+    <div className={styles.homeContainer}>
       {/* Feed Filter Bar & Search */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingBottom: '1.25rem',
-        borderBottom: '1px solid #1e1e1e',
-        marginBottom: '1.75rem',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
+      <div className={styles.filterBar}>
         {/* Switcher Tab Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <div className={styles.tabList}>
           {feedTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeFeed === tab.id;
@@ -278,32 +217,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveFeed(tab.id)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 14px',
-                  borderRadius: '8px',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: isActive ? '#ffffff' : '#0e0e0e',
-                  color: isActive ? '#000000' : '#8a8a8a',
-                  border: `1px solid ${isActive ? '#ffffff' : '#222222'}`,
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = '#ffffff';
-                    e.currentTarget.style.borderColor = '#383838';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = '#8a8a8a';
-                    e.currentTarget.style.borderColor = '#222222';
-                  }
-                }}
+                className={`${styles.tabButton} ${isActive ? styles.tabButtonActive : ''}`}
               >
                 <Icon size={13} color={isActive ? '#000000' : 'currentColor'} />
                 <span>{tab.label}</span>
@@ -313,35 +227,29 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
         </div>
 
         {/* Quick Search & Browse Trigger */}
-        <div onClick={() => setIsModalOpen(true)} style={{ position: 'relative', width: '220px', cursor: 'pointer' }}>
+        <div onClick={() => setIsModalOpen(true)} className={styles.searchContainer}>
           <input
             type="text"
             readOnly
             placeholder="Search & Browse..."
-            style={{
-              width: '100%',
-              padding: '7px 32px 7px 12px',
-              background: '#0a0a0a',
-              border: '1px solid #222222',
-              borderRadius: '6px',
-              color: '#ffffff',
-              fontSize: '0.85rem',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
+            className={styles.searchInput}
           />
-          <Search size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#737373' }} />
+          <Search size={14} className={styles.searchIcon} />
         </div>
       </div>
 
-      {loading && <p style={{ textAlign: 'center', color: '#737373', marginTop: '4rem', fontSize: '0.9rem' }}>Loading films...</p>}
-      {error && <p style={{ textAlign: 'center', color: '#ef4444', marginTop: '4rem', fontSize: '0.9rem' }}>{error}</p>}
+      {loading && <SkeletonGrid count={18} minWidth="185px" />}
+      
+      {error && (
+        <p className={`${styles.messageText} ${styles.errorText}`}>{error}</p>
+      )}
+      
       {!loading && !error && movies.length === 0 && (
-        <p style={{ textAlign: 'center', color: '#737373', marginTop: '4rem', fontSize: '0.9rem' }}>No matching films found.</p>
+        <p className={`${styles.messageText} ${styles.emptyText}`}>No matching films found.</p>
       )}
 
       {!loading && !error && movies.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1.5rem' }}>
+        <div className={styles.movieGrid}>
           {movies.map((movie) => (
             <MovieCard
               key={movie.id}
@@ -356,19 +264,15 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
 
       {/* Community Review Feed (Strictly 6 Cards in Grid) */}
       {!loading && recentReviews.length > 0 && (
-        <div style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid #1e1e1e' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <div className={styles.reviewsSection}>
+          <div className={styles.reviewsHeader}>
             <MessageSquareQuote size={16} color="#737373" />
-            <span style={{ color: '#ffffff', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+            <span className={styles.reviewsTitle}>
               Recent Community Reviews
             </span>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-            gap: '1.25rem'
-          }}>
+          <div className={styles.reviewsGrid}>
             {recentReviews.slice(0, 6).map((rev) => (
               <ReviewCard
                 key={rev.id}
@@ -423,7 +327,7 @@ function MainLayout() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', color: '#ffffff' }}>
+    <div className={styles.appContainer}>
       <Navbar onOpenAuth={handleOpenAuth} />
       <Routes>
         <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} onOpenAuth={handleOpenAuth} />} />

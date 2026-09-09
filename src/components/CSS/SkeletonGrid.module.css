@@ -1,0 +1,45 @@
+.card {
+  background-color: #0a0a0a;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #1a1a1a;
+}
+
+.poster {
+  width: 100%;
+  aspect-ratio: 2/3;
+}
+
+.body {
+  padding: 0.75rem 0.85rem;
+}
+
+.titleLine {
+  height: 14px;
+  width: 78%;
+  border-radius: 4px;
+  margin-bottom: 0.6rem;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metaPillYear {
+  height: 11px;
+  width: 32px;
+  border-radius: 3px;
+}
+
+.metaPillScore {
+  height: 11px;
+  width: 28px;
+  border-radius: 3px;
+}
+
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}

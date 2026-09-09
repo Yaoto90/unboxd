@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Star } from 'lucide-react';
+import styles from './CSS/StarRating.module.css';
 
 export default function StarRating({ rating = 0, onChange, interactive = true, size = 18 }) {
   const [hoverVal, setHoverVal] = useState(null);
@@ -22,7 +23,7 @@ export default function StarRating({ rating = 0, onChange, interactive = true, s
   return (
     <div
       onMouseLeave={() => interactive && setHoverVal(null)}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+      className={styles.container}
     >
       {[1, 2, 3, 4, 5].map((starIndex) => {
         const fillAmount = Math.max(0, Math.min(1, activeValue - (starIndex - 1)));
@@ -32,33 +33,25 @@ export default function StarRating({ rating = 0, onChange, interactive = true, s
             key={starIndex}
             onMouseMove={(e) => handleMouseMove(e, starIndex)}
             onClick={(e) => handleClick(e, starIndex)}
+            className={styles.starWrapper}
             style={{
-              position: 'relative',
               width: size,
               height: size,
-              cursor: interactive ? 'pointer' : 'default',
-              userSelect: 'none'
+              cursor: interactive ? 'pointer' : 'default'
             }}
           >
-            {/* Background Empty Star */}
             <Star
               size={size}
               strokeWidth={1.5}
               color="#3f3f46"
               fill="transparent"
-              style={{ position: 'absolute', inset: 0 }}
+              className={styles.starBg}
             />
 
-            {/* Filled Star Overlay with clipping */}
             {fillAmount > 0 && (
               <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  width: fillAmount === 0.5 ? '50%' : '100%',
-                  overflow: 'hidden',
-                  pointerEvents: 'none'
-                }}
+                className={styles.starFill}
+                style={{ width: fillAmount === 0.5 ? '50%' : '100%' }}
               >
                 <Star
                   size={size}

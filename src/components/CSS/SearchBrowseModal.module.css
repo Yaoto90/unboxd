@@ -1,0 +1,219 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.modal {
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: #0a0a0a;
+  border: 1px solid #222222;
+  border-radius: 16px;
+  padding: 1.8rem;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.98);
+  color: #ffffff;
+  position: relative;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.headerTitle {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d4d4d4;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ef4444;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 11px 42px 11px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.92rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.searchIconBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.sectionHeader {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+}
+
+.glassBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d4d4d4;
+  padding: 7px 11px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.glassBtn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.glassBtnActive {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+.glassBtnActive:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  background: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.95);
+  padding: 6px;
+  min-width: 135px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  width: 100%;
+  text-align: left;
+  border: none;
+  color: #ffffff;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.1s ease;
+}
+
+.dropdownItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dropdownItemActive {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #1f1f23;
+}
+
+.clearBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.clearBtnActive {
+  color: #a3a3a3;
+  cursor: pointer;
+}
+
+.clearBtnActive:hover {
+  color: #ffffff;
+}
+
+.clearBtnDisabled {
+  color: #444444;
+  cursor: default;
+}
+
+.applyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  background: #ffffff;
+  border: none;
+  border-radius: 8px;
+  color: #000000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.applyBtn:active {
+  transform: scale(0.98);
+}

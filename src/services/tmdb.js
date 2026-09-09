@@ -9,6 +9,21 @@ const options = {
   }
 };
 
+// In-memory cache for API calls (10 minutes TTL)
+const apiCache = new Map();
+
+async function fetchWithCache(url, cacheDuration = 1000 * 60 * 10) {
+  const cached = apiCache.get(url);
+  if (cached && Date.now() - cached.timestamp < cacheDuration) {
+    return cached.data;
+  }
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+  const data = await res.json();
+  apiCache.set(url, { data, timestamp: Date.now() });
+  return data;
+}
+
 // Strict whitelist: Hollywood/English, Japanese, Korean ONLY
 const ALLOWED_LANGS = new Set(['en', 'ja', 'ko']);
 
@@ -58,9 +73,10 @@ export const getTrendingMoviesWeek = async () => {
     const url1 = `${BASE_URL}/trending/movie/week?language=en-US&page=1`;
     const url2 = `${BASE_URL}/trending/movie/week?language=en-US&page=2`;
     
-    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
-    const data1 = res1.ok ? await res1.json() : { results: [] };
-    const data2 = res2.ok ? await res2.json() : { results: [] };
+    const [data1, data2] = await Promise.all([
+      fetchWithCache(url1, 1000 * 60 * 5),
+      fetchWithCache(url2, 1000 * 60 * 5)
+    ]);
 
     const merged = [...(data1.results || []), ...(data2.results || [])];
     return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
@@ -76,9 +92,10 @@ export const getTopRatedMovies = async () => {
     const url1 = `${BASE_URL}/movie/top_rated?language=en-US&page=1`;
     const url2 = `${BASE_URL}/movie/top_rated?language=en-US&page=2`;
 
-    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
-    const data1 = res1.ok ? await res1.json() : { results: [] };
-    const data2 = res2.ok ? await res2.json() : { results: [] };
+    const [data1, data2] = await Promise.all([
+      fetchWithCache(url1, 1000 * 60 * 5),
+      fetchWithCache(url2, 1000 * 60 * 5)
+    ]);
 
     const merged = [...(data1.results || []), ...(data2.results || [])];
     return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
@@ -94,9 +111,10 @@ export const getNowPlayingMovies = async () => {
     const url1 = `${BASE_URL}/movie/now_playing?language=en-US&page=1`;
     const url2 = `${BASE_URL}/movie/now_playing?language=en-US&page=2`;
 
-    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
-    const data1 = res1.ok ? await res1.json() : { results: [] };
-    const data2 = res2.ok ? await res2.json() : { results: [] };
+    const [data1, data2] = await Promise.all([
+      fetchWithCache(url1, 1000 * 60 * 5),
+      fetchWithCache(url2, 1000 * 60 * 5)
+    ]);
 
     const merged = [...(data1.results || []), ...(data2.results || [])];
     return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
@@ -113,9 +131,10 @@ export const getUpcomingMovies = async () => {
     const url1 = `${BASE_URL}/discover/movie?include_adult=false&language=en-US&page=1&sort_by=popularity.desc&primary_release_date.gte=${today}&with_original_language=en%7Cja%7Cko`;
     const url2 = `${BASE_URL}/discover/movie?include_adult=false&language=en-US&page=2&sort_by=popularity.desc&primary_release_date.gte=${today}&with_original_language=en%7Cja%7Cko`;
 
-    const [res1, res2] = await Promise.all([fetch(url1, options), fetch(url2, options)]);
-    const data1 = res1.ok ? await res1.json() : { results: [] };
-    const data2 = res2.ok ? await res2.json() : { results: [] };
+    const [data1, data2] = await Promise.all([
+      fetchWithCache(url1, 1000 * 60 * 5),
+      fetchWithCache(url2, 1000 * 60 * 5)
+    ]);
 
     const merged = [...(data1.results || []), ...(data2.results || [])];
     return merged.filter((m) => isValidFilm(m, false)).slice(0, 18);
@@ -136,15 +155,11 @@ export const searchMovies = async (query, page = 1) => {
     const url2 = `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=${p2}&include_adult=false`;
     const url3 = `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=${p3}&include_adult=false`;
 
-    const [res1, res2, res3] = await Promise.all([
-      fetch(url1, options), 
-      fetch(url2, options),
-      fetch(url3, options)
+    const [data1, data2, data3] = await Promise.all([
+      fetchWithCache(url1, 1000 * 60 * 3), 
+      fetchWithCache(url2, 1000 * 60 * 3),
+      fetchWithCache(url3, 1000 * 60 * 3)
     ]);
-    
-    const data1 = res1.ok ? await res1.json() : { results: [] };
-    const data2 = res2.ok ? await res2.json() : { results: [] };
-    const data3 = res3.ok ? await res3.json() : { results: [] };
 
     const merged = [
       ...(data1.results || []), 
@@ -162,11 +177,13 @@ export const searchMovies = async (query, page = 1) => {
   }
 };
 
-// 3. Discover Filtered Movies (30 titles)
+// 3. Discover Filtered Movies (30 titles, supporting combined filters)
 export const discoverLetterboxd = async ({
   decade = '',
+  year = '',
+  primaryReleaseYear = '',
   ratingOrder = '',
-  popularTime = 'all',
+  popularTime = '',
   genreId = '',
   page = 1
 } = {}) => {
@@ -179,10 +196,17 @@ export const discoverLetterboxd = async ({
     const buildUrl = (pageNum) => {
       let url = `${BASE_URL}/discover/movie?include_adult=false&include_video=false&language=en-US&page=${pageNum}&with_original_language=en%7Cja%7Cko`;
 
-      if (decade) {
+      // 1. Release Year / Decade Filter
+      const exactYear = year || primaryReleaseYear;
+      if (exactYear) {
+        url += `&primary_release_year=${exactYear}`;
+      } else if (decade) {
         const startYear = parseInt(decade, 10);
-        url += `&primary_release_date.gte=${startYear}-01-01&primary_release_date.lte=${startYear + 9}-12-31&sort_by=popularity.desc&vote_count.gte=25`;
-      } else if (ratingOrder === 'highest') {
+        url += `&primary_release_date.gte=${startYear}-01-01&primary_release_date.lte=${startYear + 9}-12-31`;
+      }
+
+      // 2. Acclaim or Popularity Sort / Date Bounds
+      if (ratingOrder === 'highest') {
         url += `&sort_by=vote_average.desc&vote_count.gte=200&primary_release_date.lte=${today}`;
       } else if (ratingOrder === 'lowest') {
         url += `&sort_by=vote_average.asc&vote_count.gte=50&primary_release_date.lte=${today}`;
@@ -197,9 +221,10 @@ export const discoverLetterboxd = async ({
       } else if (popularTime === 'year') {
         url += `&sort_by=popularity.desc&primary_release_year=${new Date().getFullYear()}&vote_count.gte=20`;
       } else {
-        url += `&sort_by=popularity.desc&vote_count.gte=25`;
+        url += `&sort_by=popularity.desc&vote_count.gte=20`;
       }
 
+      // 3. Multi-genre handling (comma-separated for OR)
       if (genreId) {
         url += `&with_genres=${genreId}`;
       }
@@ -207,15 +232,11 @@ export const discoverLetterboxd = async ({
       return url;
     };
 
-    const [res1, res2, res3] = await Promise.all([
-      fetch(buildUrl(p1), options), 
-      fetch(buildUrl(p2), options),
-      fetch(buildUrl(p3), options)
+    const [data1, data2, data3] = await Promise.all([
+      fetchWithCache(buildUrl(p1), 1000 * 60 * 5), 
+      fetchWithCache(buildUrl(p2), 1000 * 60 * 5),
+      fetchWithCache(buildUrl(p3), 1000 * 60 * 5)
     ]);
-
-    const data1 = res1.ok ? await res1.json() : { results: [] };
-    const data2 = res2.ok ? await res2.json() : { results: [] };
-    const data3 = res3.ok ? await res3.json() : { results: [] };
 
     const merged = [
       ...(data1.results || []), 
@@ -234,9 +255,43 @@ export const discoverLetterboxd = async ({
 };
 
 export const getMovieDetails = async (movieId) => {
-  const res = await fetch(`${BASE_URL}/movie/${movieId}?language=en-US&append_to_response=credits,videos`, options);
-  if (!res.ok) throw new Error('Failed to fetch movie details');
-  return res.json();
+  return fetchWithCache(`${BASE_URL}/movie/${movieId}?language=en-US&append_to_response=credits,videos`);
+};
+
+// Fetch Watch Providers (Streaming, Rent, Buy)
+export const getMovieWatchProviders = async (movieId) => {
+  try {
+    const data = await fetchWithCache(`${BASE_URL}/movie/${movieId}/watch/providers`);
+    return data.results || null;
+  } catch (err) {
+    console.error('getMovieWatchProviders error:', err);
+    return null;
+  }
+};
+
+// Fetch Recommended & Similar Movies
+export const getMovieRecommendations = async (movieId) => {
+  try {
+    const [recData, simData] = await Promise.all([
+      fetchWithCache(`${BASE_URL}/movie/${movieId}/recommendations?language=en-US&page=1`),
+      fetchWithCache(`${BASE_URL}/movie/${movieId}/similar?language=en-US&page=1`)
+    ]);
+
+    const combined = [...(recData.results || []), ...(simData.results || [])];
+    const map = new Map();
+    combined.forEach((m) => {
+      if (m.id && m.poster_path && !map.has(m.id)) {
+        map.set(m.id, m);
+      }
+    });
+
+    return Array.from(map.values())
+      .filter((m) => isValidFilm(m, false))
+      .slice(0, 16);
+  } catch (err) {
+    console.error('getMovieRecommendations error:', err);
+    return [];
+  }
 };
 
 export const getImageUrl = (path, size = 'w500') => {
@@ -245,14 +300,41 @@ export const getImageUrl = (path, size = 'w500') => {
 
 // Fetch person details (biography, birthday, place of birth)
 export async function getPersonDetails(personId) {
-  const res = await fetch(`${BASE_URL}/person/${personId}?language=en-US`, options);
-  if (!res.ok) throw new Error('Failed to fetch person details');
-  return res.json();
+  return fetchWithCache(`${BASE_URL}/person/${personId}?language=en-US`);
 }
 
 // Fetch person movie credits (cast & crew filmography)
 export async function getPersonMovieCredits(personId) {
-  const res = await fetch(`${BASE_URL}/person/${personId}/movie_credits?language=en-US`, options);
-  if (!res.ok) throw new Error('Failed to fetch person movie credits');
-  return res.json();
+  return fetchWithCache(`${BASE_URL}/person/${personId}/movie_credits?language=en-US`);
+}
+
+// Fetch production company / studio details
+export async function getCompanyDetails(companyId) {
+  return fetchWithCache(`${BASE_URL}/company/${companyId}`);
+}
+
+// Fetch movies produced by a company / studio
+export async function getCompanyMovies(companyId, page = 1) {
+  try {
+    const url1 = `${BASE_URL}/discover/movie?with_companies=${companyId}&include_adult=false&language=en-US&sort_by=popularity.desc&page=${page * 2 - 1}&with_original_language=en%7Cja%7Cko`;
+    const url2 = `${BASE_URL}/discover/movie?with_companies=${companyId}&include_adult=false&language=en-US&sort_by=popularity.desc&page=${page * 2}&with_original_language=en%7Cja%7Cko`;
+
+    const [data1, data2] = await Promise.all([
+      fetchWithCache(url1, 1000 * 60 * 5),
+      fetchWithCache(url2, 1000 * 60 * 5)
+    ]);
+
+    const merged = [...(data1.results || []), ...(data2.results || [])].filter((m) => isValidFilm(m, false));
+    const map = new Map();
+    merged.forEach((m) => {
+      if (m.id && m.poster_path && !map.has(m.id)) {
+        map.set(m.id, m);
+      }
+    });
+
+    return Array.from(map.values());
+  } catch (err) {
+    console.error('getCompanyMovies error:', err);
+    return [];
+  }
 }

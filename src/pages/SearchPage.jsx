@@ -2,61 +2,30 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { searchMovies, discoverLetterboxd, getImageUrl } from '../services/tmdb';
 import SearchBrowseModal from '../components/SearchBrowseModal';
-import { Star, Search, ChevronLeft, ChevronRight, SlidersHorizontal, Film } from 'lucide-react';
+import SkeletonGrid from '../components/SkeletonGrid';
+import { Star, ChevronLeft, ChevronRight, SlidersHorizontal, Film } from 'lucide-react';
+import styles from './CSS/SearchPage.module.css';
 
 function MovieCard({ movie, onSelect }) {
-  const [isHovered, setIsHovered] = useState(false);
   if (!movie) return null;
 
   return (
-    <div
-      onClick={() => onSelect(movie.id)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        backgroundColor: '#0a0a0a',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        border: `1px solid ${isHovered ? '#3b82f6' : '#1e1e1e'}`,
-        transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease',
-        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: isHovered ? '0 10px 25px rgba(0, 0, 0, 0.7)' : 'none'
-      }}
-    >
-      <div style={{ width: '100%', aspectRatio: '2/3', position: 'relative', overflow: 'hidden', background: '#121212' }}>
+    <div onClick={() => onSelect(movie.id)} className={styles.card}>
+      <div className={styles.cardPosterWrap}>
         <img
           src={getImageUrl(movie.poster_path)}
           alt={movie.title || 'Poster'}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            transition: 'transform 0.2s ease',
-            transform: isHovered ? 'scale(1.02)' : 'scale(1)'
-          }}
+          className={styles.cardPoster}
         />
       </div>
 
-      <div style={{ padding: '0.75rem 0.85rem' }}>
-        <h3 style={{
-          fontSize: '0.88rem',
-          margin: '0 0 0.35rem 0',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          color: isHovered ? '#ffffff' : '#e5e5e5',
-          fontWeight: 600,
-          transition: 'color 0.15s ease'
-        }}>
-          {movie.title || 'Untitled'}
-        </h3>
+      <div className={styles.cardBody}>
+        <h3 className={styles.cardTitle}>{movie.title || 'Untitled'}</h3>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#737373' }}>
+        <div className={styles.cardMeta}>
           <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#22c55e', fontWeight: 700 }}>
-            <Star size={12} fill="#22c55e" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', fontWeight: 600 }}>
+            <Star size={13} fill="#ffffff" />
             {movie.vote_average ? movie.vote_average.toFixed(1) : '-'}
           </span>
         </div>
@@ -70,8 +39,14 @@ export default function SearchPage({ onSelectMovie }) {
 
   const type = searchParams.get('type') || 'popular';
   const value = searchParams.get('value') || 'all';
-  const label = searchParams.get('label') || 'POPULAR FILMS';
+  const label = searchParams.get('label') || 'FILMS';
   const page = parseInt(searchParams.get('page') || '1', 10);
+
+  const decade = searchParams.get('decade') || '';
+  const year = searchParams.get('year') || '';
+  const popular = searchParams.get('popular') || '';
+  const rating = searchParams.get('rating') || '';
+  const genres = searchParams.get('genres') || '';
 
   const [movies, setMovies] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -89,12 +64,23 @@ export default function SearchPage({ onSelectMovie }) {
         let data;
         if (type === 'search') {
           data = await searchMovies(value, page);
+        } else if (type === 'filter') {
+          data = await discoverLetterboxd({
+            decade,
+            year,
+            popularTime: popular,
+            ratingOrder: rating,
+            genreId: genres,
+            page
+          });
         } else if (type === 'popular') {
           data = await discoverLetterboxd({ popularTime: value, page });
         } else if (type === 'rating') {
           data = await discoverLetterboxd({ ratingOrder: value, page });
         } else if (type === 'decade') {
           data = await discoverLetterboxd({ decade: value, page });
+        } else if (type === 'year') {
+          data = await discoverLetterboxd({ primaryReleaseYear: value, page });
         } else if (type === 'genre') {
           data = await discoverLetterboxd({ genreId: value, page });
         }
@@ -109,7 +95,7 @@ export default function SearchPage({ onSelectMovie }) {
     };
 
     fetchResults();
-  }, [type, value, page]);
+  }, [type, value, decade, year, popular, rating, genres, page]);
 
   const setPage = (newPage) => {
     searchParams.set('page', String(newPage));
@@ -117,52 +103,26 @@ export default function SearchPage({ onSelectMovie }) {
   };
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '2rem 1.5rem 6rem 1.5rem' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingBottom: '1.25rem',
-        borderBottom: '1px solid #1f1f23',
-        marginBottom: '2rem',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <Film size={18} color="#22c55e" />
-          <h1 style={{ color: '#ffffff', fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
-            {label}
-          </h1>
+    <div className={styles.container}>
+      <div className={styles.headerBar}>
+        <div className={styles.titleArea}>
+          <Film size={18} color="#ffffff" />
+          <h1 className={styles.pageTitle}>{label}</h1>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: '#111111',
-            border: '1px solid #282828',
-            color: '#ffffff',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
+        <button onClick={() => setIsModalOpen(true)} className={styles.filterTriggerBtn}>
           <SlidersHorizontal size={14} /> Filter & Search
         </button>
       </div>
 
-      {loading && <p style={{ textAlign: 'center', color: '#737373', marginTop: '5rem', fontSize: '1rem' }}>Querying TMDB archives...</p>}
+      {loading && <SkeletonGrid count={30} minWidth="185px" />}
       {error && <p style={{ textAlign: 'center', color: '#ef4444', marginTop: '5rem', fontSize: '1rem' }}>{error}</p>}
       {!loading && !error && movies.length === 0 && (
         <p style={{ textAlign: 'center', color: '#737373', marginTop: '5rem', fontSize: '1rem' }}>No matching films found.</p>
       )}
 
       {!loading && !error && movies.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>
+        <div className={styles.movieGrid}>
           {movies.map((movie) => (
             <MovieCard key={movie.id} movie={movie} onSelect={onSelectMovie} />
           ))}
@@ -170,31 +130,11 @@ export default function SearchPage({ onSelectMovie }) {
       )}
 
       {!loading && movies.length > 0 && totalPages > 1 && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '1.25rem',
-          marginTop: '4rem',
-          paddingTop: '2rem',
-          borderTop: '1px solid #1a1a1a'
-        }}>
+        <div className={styles.paginationRow}>
           <button
             disabled={page <= 1}
             onClick={() => setPage(page - 1)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              background: '#111111',
-              border: '1px solid #262626',
-              color: page <= 1 ? '#404040' : '#ffffff',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              cursor: page <= 1 ? 'not-allowed' : 'pointer'
-            }}
+            className={`${styles.pageBtn} ${page <= 1 ? styles.pageBtnDisabled : styles.pageBtnEnabled}`}
           >
             <ChevronLeft size={16} /> Previous
           </button>
@@ -206,19 +146,7 @@ export default function SearchPage({ onSelectMovie }) {
           <button
             disabled={page >= totalPages}
             onClick={() => setPage(page + 1)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              background: '#111111',
-              border: '1px solid #262626',
-              color: page >= totalPages ? '#404040' : '#ffffff',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              cursor: page >= totalPages ? 'not-allowed' : 'pointer'
-            }}
+            className={`${styles.pageBtn} ${page >= totalPages ? styles.pageBtnDisabled : styles.pageBtnEnabled}`}
           >
             Next <ChevronRight size={16} />
           </button>

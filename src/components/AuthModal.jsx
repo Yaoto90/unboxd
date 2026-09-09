@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { X } from 'lucide-react';
+import styles from './CSS/AuthModal.module.css';
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
@@ -73,235 +74,72 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
   };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.88)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '2rem'
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#0a0a0a',
-          border: '1px solid #1e1e1e',
-          borderRadius: '16px',
-          width: '100%',
-          maxWidth: '540px',
-          padding: '3rem',
-          color: '#ffffff',
-          boxShadow: '0 30px 70px -15px rgba(0, 0, 0, 0.95)',
-          position: 'relative'
-        }}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
+    <div onClick={onClose} className={styles.backdrop}>
+      <div onClick={(e) => e.stopPropagation()} className={styles.modal}>
+        <div className={styles.header}>
           <div>
-            <span style={{
-              display: 'block',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: '#737373',
-              marginBottom: '0.4rem'
-            }}>
-              UnBoxd Account
-            </span>
-            <h2 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff' }}>
+            <span className={styles.subTitle}>UnBoxd Account</span>
+            <h2 className={styles.title}>
               {isSignUp ? 'Create your account' : 'Sign in to your account'}
             </h2>
           </div>
 
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '10px',
-              background: '#121212',
-              border: '1px solid #222222',
-              color: '#8a8a8a',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.borderColor = '#383838';
-              e.currentTarget.style.background = '#1a1a1a';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#8a8a8a';
-              e.currentTarget.style.borderColor = '#222222';
-              e.currentTarget.style.background = '#121212';
-            }}
-          >
+          <button onClick={onClose} aria-label="Close" className={styles.closeBtn}>
             <X size={18} />
           </button>
         </div>
 
         {errorMsg && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
-            borderRadius: '8px',
-            padding: '0.9rem 1.1rem',
-            marginBottom: '1.75rem'
-          }}>
-            <p style={{ margin: 0, color: '#f87171', fontSize: '0.9rem', lineHeight: '1.4' }}>
-              {errorMsg}
-            </p>
+          <div className={styles.errorBanner}>
+            <p className={styles.errorText}>{errorMsg}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <form onSubmit={handleSubmit} className={styles.form}>
           {isSignUp && (
             <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: '#737373',
-                marginBottom: '8px'
-              }}>
-                Username
-              </label>
+              <label className={styles.label}>Username</label>
               <input
                 type="text"
                 placeholder="Choose a username"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  borderRadius: '10px',
-                  background: '#121212',
-                  border: '1px solid #222222',
-                  color: '#ffffff',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.15s ease'
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = '#444444')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = '#222222')}
+                className={styles.input}
               />
             </div>
           )}
 
           <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: '#737373',
-              marginBottom: '8px'
-            }}>
-              Email Address
-            </label>
+            <label className={styles.label}>Email Address</label>
             <input
               type="email"
               placeholder="name@example.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                borderRadius: '10px',
-                background: '#121212',
-                border: '1px solid #222222',
-                color: '#ffffff',
-                fontSize: '0.95rem',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s ease'
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#444444')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = '#222222')}
+              className={styles.input}
             />
           </div>
 
           <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: '#737373',
-              marginBottom: '8px'
-            }}>
-              Password
-            </label>
+            <label className={styles.label}>Password</label>
             <input
               type="password"
               placeholder="••••••••"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                borderRadius: '10px',
-                background: '#121212',
-                border: '1px solid #222222',
-                color: '#ffffff',
-                fontSize: '0.95rem',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s ease'
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#444444')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = '#222222')}
+              className={styles.input}
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: '0.5rem',
-              padding: '14px 20px',
-              background: '#ffffff',
-              border: '1px solid #ffffff',
-              borderRadius: '10px',
-              color: '#000000',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-              transition: 'background 0.15s ease, opacity 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.background = '#e5e5e5';
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) e.currentTarget.style.background = '#ffffff';
-            }}
-          >
+          <button type="submit" disabled={loading} className={styles.submitBtn}>
             {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Sign In'}
           </button>
         </form>
 
-        <p style={{ marginTop: '2rem', marginBottom: 0, fontSize: '0.9rem', textAlign: 'center', color: '#737373' }}>
+        <p className={styles.switchText}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             type="button"
@@ -309,16 +147,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
               setIsSignUp(!isSignUp);
               setErrorMsg('');
             }}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              textDecoration: 'underline'
-            }}
+            className={styles.switchBtn}
           >
             {isSignUp ? 'Sign In' : 'Sign Up'}
           </button>

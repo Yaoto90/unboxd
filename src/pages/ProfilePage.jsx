@@ -2,9 +2,25 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { getImageUrl } from '../services/tmdb';
+import { getImageUrl, searchMovies } from '../services/tmdb';
 import StarRating from '../components/StarRating';
 import { User, Bookmark, Star, Trash2, Shield, ArrowLeft, Lock, KeyRound, ArrowUpDown, Eye, Camera, Loader2, X, Check, ZoomIn, ZoomOut, Edit3 } from 'lucide-react';
+import styles from './CSS/ProfilePage.module.css';
+
+function ProfileRecordsSkeleton() {
+  return (
+    <div className={styles.movieGrid}>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className={styles.card}>
+          <div className="skeleton-box" style={{ width: '100%', aspectRatio: '2/3' }} />
+          <div style={{ padding: '0.85rem' }}>
+            <div className="skeleton-box" style={{ height: '14px', width: '80%', borderRadius: '4px' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
   const [zoom, setZoom] = useState(1);
@@ -120,34 +136,8 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
   const { width: currentW, height: currentH } = getRenderDimensions(zoom);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.94)',
-        backdropFilter: 'blur(12px)',
-        zIndex: 4000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1.5rem',
-        userSelect: 'none'
-      }}
-    >
-      <div
-        style={{
-          background: '#0d0d0d',
-          border: '1px solid #242424',
-          borderRadius: '16px',
-          padding: '2rem',
-          width: '100%',
-          maxWidth: '420px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.98)'
-        }}
-      >
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.94)', backdropFilter: 'blur(12px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', userSelect: 'none' }}>
+      <div style={{ background: '#0d0d0d', border: '1px solid #242424', borderRadius: '16px', padding: '2rem', width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 30px 80px rgba(0, 0, 0, 0.98)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#ffffff' }}>Reposition Picture</h3>
           <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', padding: '4px' }}>
@@ -158,20 +148,7 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
         <div
           onPointerDown={handlePointerDown}
           onDragStart={(e) => e.preventDefault()}
-          style={{
-            width: `${boxSize}px`,
-            height: `${boxSize}px`,
-            borderRadius: '50%',
-            overflow: 'hidden',
-            position: 'relative',
-            background: '#121212',
-            border: '2px solid #22c55e',
-            cursor: 'grab',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            touchAction: 'none'
-          }}
+          style={{ width: `${boxSize}px`, height: `${boxSize}px`, borderRadius: '50%', overflow: 'hidden', position: 'relative', background: '#121212', border: '2px solid #22c55e', cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center', touchAction: 'none' }}
         >
           {imgElement && (
             <img
@@ -179,16 +156,7 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
               alt="Crop preview"
               draggable={false}
               onDragStart={(e) => e.preventDefault()}
-              style={{
-                position: 'absolute',
-                width: `${currentW}px`,
-                height: `${currentH}px`,
-                maxWidth: 'none',
-                maxHeight: 'none',
-                transform: `translate(${offset.x}px, ${offset.y}px)`,
-                pointerEvents: 'none',
-                userSelect: 'none'
-              }}
+              style={{ position: 'absolute', width: `${currentW}px`, height: `${currentH}px`, maxWidth: 'none', maxHeight: 'none', transform: `translate(${offset.x}px, ${offset.y}px)`, pointerEvents: 'none', userSelect: 'none' }}
             />
           )}
         </div>
@@ -212,40 +180,10 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
         </div>
 
         <div style={{ display: 'flex', gap: '0.9rem', width: '100%' }}>
-          <button
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              padding: '10px',
-              borderRadius: '8px',
-              background: '#141414',
-              border: '1px solid #262626',
-              color: '#ffffff',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={onCancel} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#141414', border: '1px solid #262626', color: '#ffffff', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>
             Cancel
           </button>
-          <button
-            onClick={handleSave}
-            style={{
-              flex: 1,
-              padding: '10px',
-              borderRadius: '8px',
-              background: '#ffffff',
-              border: 'none',
-              color: '#000000',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px'
-            }}
-          >
+          <button onClick={handleSave} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#ffffff', border: 'none', color: '#000000', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Check size={16} /> Save Avatar
           </button>
         </div>
@@ -267,10 +205,7 @@ function EditReviewModal({ review, onClose, onUpdated }) {
     try {
       const { error } = await supabase
         .from('reviews')
-        .update({
-          rating: parseFloat(rating),
-          review_text: text.trim()
-        })
+        .update({ rating: parseFloat(rating), review_text: text.trim() })
         .eq('id', review.id);
 
       if (error) throw error;
@@ -284,33 +219,8 @@ function EditReviewModal({ review, onClose, onUpdated }) {
   };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.92)',
-        backdropFilter: 'blur(12px)',
-        zIndex: 4100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1.5rem'
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#0d0d0d',
-          border: '1px solid #282828',
-          borderRadius: '16px',
-          padding: '2rem',
-          width: '100%',
-          maxWidth: '520px',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.95)',
-          color: '#ffffff'
-        }}
-      >
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(12px)', zIndex: 4100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #282828', borderRadius: '16px', padding: '2rem', width: '100%', maxWidth: '520px', boxShadow: '0 30px 80px rgba(0,0,0,0.95)', color: '#ffffff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Edit Review: {review.movie_title}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}>
@@ -328,48 +238,14 @@ function EditReviewModal({ review, onClose, onUpdated }) {
             rows={4}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 14px',
-              background: '#121212',
-              border: '1px solid #262626',
-              borderRadius: '8px',
-              color: '#ffffff',
-              fontSize: '0.95rem',
-              outline: 'none',
-              resize: 'vertical',
-              boxSizing: 'border-box'
-            }}
+            style={{ width: '100%', padding: '12px 14px', background: '#121212', border: '1px solid #262626', borderRadius: '8px', color: '#ffffff', fontSize: '0.95rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '8px 16px',
-                background: '#161616',
-                border: '1px solid #262626',
-                color: '#ffffff',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-            >
+            <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: '#161616', border: '1px solid #262626', color: '#ffffff', borderRadius: '6px', cursor: 'pointer' }}>
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                padding: '8px 18px',
-                background: '#ffffff',
-                border: 'none',
-                color: '#000000',
-                borderRadius: '6px',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
+            <button type="submit" disabled={saving} style={{ padding: '8px 18px', background: '#ffffff', border: 'none', color: '#000000', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}>
               {saving ? 'Saving...' : 'Update Review'}
             </button>
           </div>
@@ -381,7 +257,7 @@ function EditReviewModal({ review, onClose, onUpdated }) {
 
 export default function ProfilePage({ onSelectMovie }) {
   const navigate = useNavigate();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, loading: authLoading } = useAuth();
   const fileInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('watched');
   const [watchlist, setWatchlist] = useState([]);
@@ -390,57 +266,57 @@ export default function ProfilePage({ onSelectMovie }) {
   const [reviewSort, setReviewSort] = useState('newest');
   const [loading, setLoading] = useState(true);
 
-  // Avatar State
   const [cropImageSrc, setCropImageSrc] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarHover, setAvatarHover] = useState(false);
 
-  // Review Edit State
   const [editingReview, setEditingReview] = useState(null);
 
-  // Profile Edit State
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState({ type: '', msg: '' });
 
-  // Password Change State
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState({ type: '', msg: '' });
 
+  const [bioInput, setBioInput] = useState('');
+  const [savingBio, setSavingBio] = useState(false);
+  const [bioStatus, setBioStatus] = useState({ type: '', msg: '' });
+
+  const [favoriteMovies, setFavoriteMovies] = useState([]);
+  const [favSearchQuery, setFavSearchQuery] = useState('');
+  const [favSearchResults, setFavSearchResults] = useState([]);
+  const [favSearching, setFavSearching] = useState(false);
+  const [savingFavorites, setSavingFavorites] = useState(false);
+  const [favStatus, setFavStatus] = useState({ type: '', msg: '' });
+
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate('/');
       return;
     }
 
     setUsernameInput(profile?.username || user.email?.split('@')[0] || '');
+    setBioInput(profile?.bio || '');
+    setFavoriteMovies(Array.isArray(profile?.favorite_movies) ? profile.favorite_movies : []);
 
     async function fetchUserData() {
       setLoading(true);
       try {
         const [listsRes, revRes] = await Promise.all([
-          supabase
-            .from('watchlists')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('reviews')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
+          supabase.from('watchlists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('reviews').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
         ]);
 
         const allLists = listsRes.data || [];
         const reviewsData = revRes.data || [];
 
-        // 1. Explicit watched from watchlists table (works for watched without review)
         const explicitWatched = allLists.filter((item) => item.type === 'watched');
         const explicitWatchedIds = new Set(explicitWatched.map((item) => Number(item.tmdb_movie_id)));
 
-        // 2. Implicit watched from reviews (ensures all reviewed movies also count as watched)
         const implicitWatched = reviewsData
           .filter((rev) => !explicitWatchedIds.has(Number(rev.tmdb_movie_id)))
           .map((rev) => ({
@@ -452,7 +328,6 @@ export default function ProfilePage({ onSelectMovie }) {
             created_at: rev.created_at
           }));
 
-        // 3. Deduplicate Watched
         const watchedMap = new Map();
         [...explicitWatched, ...implicitWatched].forEach((item) => {
           if (item.tmdb_movie_id && !watchedMap.has(Number(item.tmdb_movie_id))) {
@@ -461,7 +336,6 @@ export default function ProfilePage({ onSelectMovie }) {
         });
         const finalWatchedList = Array.from(watchedMap.values());
 
-        // 4. Watchlist (excludes items marked as watched or reviewed)
         const allWatchedIds = new Set(finalWatchedList.map((item) => Number(item.tmdb_movie_id)));
         const cleanWatchlist = allLists.filter(
           (item) => (item.type === 'watchlist' || !item.type) && !allWatchedIds.has(Number(item.tmdb_movie_id))
@@ -471,10 +345,7 @@ export default function ProfilePage({ onSelectMovie }) {
         setWatchlist(cleanWatchlist);
         setReviews(reviewsData);
 
-        // 5. Background sync: write missing reviewed movies to watchlists table
-        const missingFromDb = reviewsData.filter(
-          (rev) => !explicitWatchedIds.has(Number(rev.tmdb_movie_id))
-        );
+        const missingFromDb = reviewsData.filter((rev) => !explicitWatchedIds.has(Number(rev.tmdb_movie_id)));
         if (missingFromDb.length > 0) {
           const toInsert = missingFromDb.map((rev) => ({
             user_id: user.id,
@@ -493,55 +364,72 @@ export default function ProfilePage({ onSelectMovie }) {
     }
 
     fetchUserData();
-  }, [user, profile, navigate]);
+  }, [user, authLoading, profile, navigate]);
 
-  // Sync listener to update counts and lists when toggled in MovieDetailModal
   useEffect(() => {
-    const handleStatusChange = (e) => {
-      const { movieId, isWatched, reviewDeleted } = e.detail || {};
+    if (!user) return;
+
+    const handleStatusChange = async (e) => {
+      const { movieId, isWatched, reviewDeleted, reviewId: deletedReviewId } = e.detail || {};
       const numericId = Number(movieId);
 
       if (typeof isWatched === 'boolean') {
-        if (!isWatched) {
+        if (isWatched) {
+          const { data: movieData } = await supabase
+            .from('watchlists')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('tmdb_movie_id', numericId)
+            .eq('type', 'watched')
+            .maybeSingle();
+
+          if (movieData) {
+            setWatched((prev) => {
+              if (prev.some((w) => Number(w.tmdb_movie_id) === numericId)) return prev;
+              return [movieData, ...prev];
+            });
+          }
+        } else {
           setWatched((prev) => prev.filter((w) => Number(w.tmdb_movie_id) !== numericId));
         }
       }
 
       if (reviewDeleted) {
-        setReviews((prev) => prev.filter((r) => Number(r.tmdb_movie_id) !== numericId));
+        if (deletedReviewId) {
+          setReviews((prev) => prev.filter((r) => String(r.id) !== String(deletedReviewId)));
+        } else if (numericId) {
+          setReviews((prev) => prev.filter((r) => Number(r.tmdb_movie_id) !== numericId));
+        }
+      } else if (numericId) {
+        const { data: latestReviews } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (latestReviews) setReviews(latestReviews);
       }
     };
 
     window.addEventListener('unboxd:movie-status-changed', handleStatusChange);
     return () => window.removeEventListener('unboxd:movie-status-changed', handleStatusChange);
-  }, []);
+  }, [user]);
 
   const sortedReviews = useMemo(() => {
     const list = [...reviews];
     switch (reviewSort) {
-      case 'oldest':
-        return list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      case 'rating-high':
-        return list.sort((a, b) => b.rating - a.rating);
-      case 'rating-low':
-        return list.sort((a, b) => a.rating - b.rating);
-      case 'title':
-        return list.sort((a, b) => (a.movie_title || '').localeCompare(b.movie_title || ''));
+      case 'oldest': return list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      case 'rating-high': return list.sort((a, b) => b.rating - a.rating);
+      case 'rating-low': return list.sort((a, b) => a.rating - b.rating);
+      case 'title': return list.sort((a, b) => (a.movie_title || '').localeCompare(b.movie_title || ''));
       case 'newest':
-      default:
-        return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      default: return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
   }, [reviews, reviewSort]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please choose a valid image file.');
-      return;
-    }
-
+    if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = () => setCropImageSrc(reader.result);
     reader.readAsDataURL(file);
@@ -554,30 +442,18 @@ export default function ProfilePage({ onSelectMovie }) {
 
     try {
       const filePath = `${user.id}/avatar_${Date.now()}.webp`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, blob, { contentType: 'image/webp', upsert: true });
-
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, blob, { contentType: 'image/webp', upsert: true });
       if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
+      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       const avatarUrl = publicUrlData.publicUrl;
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', user.id);
-
+      const { error: profileError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id);
       if (profileError) throw profileError;
 
       await refreshProfile();
     } catch (err) {
       console.error('Failed to update avatar:', err);
-      alert(err.message || 'Failed to update avatar image.');
     } finally {
       setUploadingAvatar(false);
     }
@@ -586,79 +462,97 @@ export default function ProfilePage({ onSelectMovie }) {
   const handleUpdateUsername = async (e) => {
     e.preventDefault();
     const cleanUsername = usernameInput.trim();
-
-    if (!cleanUsername) {
-      setUsernameStatus({ type: 'error', msg: 'Username cannot be empty.' });
-      return;
-    }
-    if (cleanUsername.length < 3) {
-      setUsernameStatus({ type: 'error', msg: 'Username must be at least 3 characters.' });
-      return;
-    }
-    if (cleanUsername.toLowerCase() === (profile?.username || '').toLowerCase()) {
-      setUsernameStatus({ type: 'success', msg: 'Username is unchanged.' });
-      setTimeout(() => setUsernameStatus({ type: '', msg: '' }), 3000);
-      return;
-    }
+    if (!cleanUsername || cleanUsername.length < 3) return;
 
     setSavingUsername(true);
     setUsernameStatus({ type: '', msg: '' });
 
     try {
-      const { data: existing, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('username', cleanUsername)
-        .neq('id', user.id)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
+      const { data: existing } = await supabase.from('profiles').select('id').ilike('username', cleanUsername).neq('id', user.id).maybeSingle();
       if (existing) {
         setUsernameStatus({ type: 'error', msg: 'This username is taken.' });
         setSavingUsername(false);
         return;
       }
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ username: cleanUsername })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
+      await supabase.from('profiles').update({ username: cleanUsername }).eq('id', user.id);
       await refreshProfile();
       setUsernameStatus({ type: 'success', msg: 'Username updated!' });
-      setTimeout(() => setUsernameStatus({ type: '', msg: '' }), 3000);
     } catch (err) {
-      setUsernameStatus({ type: 'error', msg: err.message || 'Failed to update username.' });
+      setUsernameStatus({ type: 'error', msg: err.message });
     } finally {
       setSavingUsername(false);
     }
   };
 
+  const handleUpdateBio = async (e) => {
+    e.preventDefault();
+    setSavingBio(true);
+    setBioStatus({ type: '', msg: '' });
+
+    try {
+      await supabase.from('profiles').update({ bio: bioInput.trim() }).eq('id', user.id);
+      await refreshProfile();
+      setBioStatus({ type: 'success', msg: 'Bio updated!' });
+    } catch (err) {
+      setBioStatus({ type: 'error', msg: err.message });
+    } finally {
+      setSavingBio(false);
+    }
+  };
+
+  const handleFavSearchChange = async (e) => {
+    const q = e.target.value;
+    setFavSearchQuery(q);
+    if (!q.trim()) {
+      setFavSearchResults([]);
+      return;
+    }
+    setFavSearching(true);
+    try {
+      const data = await searchMovies(q.trim(), 1);
+      setFavSearchResults(Array.isArray(data?.results) ? data.results.slice(0, 6) : []);
+    } finally {
+      setFavSearching(false);
+    }
+  };
+
+  const handleAddFavorite = (movie) => {
+    if (favoriteMovies.length >= 4 || favoriteMovies.some((m) => m.tmdb_movie_id === movie.id)) return;
+    setFavoriteMovies((prev) => [...prev, { tmdb_movie_id: movie.id, title: movie.title, poster_path: movie.poster_path }]);
+    setFavSearchQuery('');
+    setFavSearchResults([]);
+  };
+
+  const handleRemoveFavorite = (tmdbId) => {
+    setFavoriteMovies((prev) => prev.filter((m) => m.tmdb_movie_id !== tmdbId));
+  };
+
+  const handleSaveFavorites = async () => {
+    setSavingFavorites(true);
+    setFavStatus({ type: '', msg: '' });
+    try {
+      await supabase.from('profiles').update({ favorite_movies: favoriteMovies }).eq('id', user.id);
+      await refreshProfile();
+      setFavStatus({ type: 'success', msg: 'Favorites updated!' });
+    } catch (err) {
+      setFavStatus({ type: 'error', msg: err.message });
+    } finally {
+      setSavingFavorites(false);
+    }
+  };
+
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
-    if (!newPassword || !confirmPassword) return;
-
-    if (newPassword !== confirmPassword) {
-      setPasswordStatus({ type: 'error', msg: 'Passwords do not match' });
-      return;
-    }
-    if (newPassword.length < 6) {
-      setPasswordStatus({ type: 'error', msg: 'Password must be at least 6 characters' });
-      return;
-    }
-
+    if (!newPassword || newPassword !== confirmPassword || newPassword.length < 6) return;
     setSavingPassword(true);
     setPasswordStatus({ type: '', msg: '' });
 
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-
     if (!error) {
       setPasswordStatus({ type: 'success', msg: 'Password updated successfully' });
       setNewPassword('');
       setConfirmPassword('');
-      setTimeout(() => setPasswordStatus({ type: '', msg: '' }), 3000);
     } else {
       setPasswordStatus({ type: 'error', msg: error.message });
     }
@@ -668,699 +562,201 @@ export default function ProfilePage({ onSelectMovie }) {
   const handleRemoveItem = async (e, item, type) => {
     e.stopPropagation();
     const movieId = Number(item.tmdb_movie_id);
+    await supabase.from('watchlists').delete().eq('user_id', user.id).eq('tmdb_movie_id', movieId).eq('type', type);
 
-    try {
-      await supabase
-        .from('watchlists')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('tmdb_movie_id', movieId)
-        .eq('type', type);
-
-      if (type === 'watched') {
-        // Remove associated review when removed from watched
-        await supabase
-          .from('reviews')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('tmdb_movie_id', movieId);
-
-        setWatched((prev) => prev.filter((w) => Number(w.tmdb_movie_id) !== movieId));
-        setReviews((prev) => prev.filter((r) => Number(r.tmdb_movie_id) !== movieId));
-
-        window.dispatchEvent(
-          new CustomEvent('unboxd:movie-status-changed', {
-            detail: { movieId, isWatched: false, reviewDeleted: true }
-          })
-        );
-      } else {
-        setWatchlist((prev) => prev.filter((w) => Number(w.tmdb_movie_id) !== movieId));
-      }
-    } catch (err) {
-      console.error('Failed to remove item:', err);
+    if (type === 'watched') {
+      await supabase.from('reviews').delete().eq('user_id', user.id).eq('tmdb_movie_id', movieId);
+      setWatched((prev) => prev.filter((w) => Number(w.tmdb_movie_id) !== movieId));
+      setReviews((prev) => prev.filter((r) => Number(r.tmdb_movie_id) !== movieId));
+      window.dispatchEvent(new CustomEvent('unboxd:movie-status-changed', { detail: { movieId, isWatched: false, reviewDeleted: true } }));
+    } else {
+      setWatchlist((prev) => prev.filter((w) => Number(w.tmdb_movie_id) !== movieId));
     }
   };
 
   const handleDeleteReview = async (e, id) => {
     e.stopPropagation();
+    if (!id) return;
     const target = reviews.find((r) => r.id === id);
     const { error } = await supabase.from('reviews').delete().eq('id', id);
     if (!error) {
-      setReviews((prev) => prev.filter((item) => item.id !== id));
+      setReviews((prev) => prev.filter((item) => String(item.id) !== String(id)));
       if (target) {
-        window.dispatchEvent(
-          new CustomEvent('unboxd:movie-status-changed', {
-            detail: { movieId: Number(target.tmdb_movie_id), reviewDeleted: true }
-          })
-        );
+        window.dispatchEvent(new CustomEvent('unboxd:movie-status-changed', { detail: { movieId: Number(target.tmdb_movie_id), reviewDeleted: true, reviewId: id } }));
       }
     }
-  };
-
-  const handleReviewUpdated = (updated) => {
-    setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
   };
 
   const averageRating = reviews.length > 0
     ? (reviews.reduce((acc, curr) => acc + Number(curr.rating), 0) / reviews.length).toFixed(1)
     : '-';
 
+  if (authLoading || (!user && loading)) {
+    return <div style={{ textAlign: 'center', color: '#737373', padding: '6rem 2rem' }}>Loading session...</div>;
+  }
+
   if (!user) return null;
 
   return (
-    <div style={{ maxWidth: '1340px', margin: '0 auto', padding: '2.5rem 1.5rem 6rem 1.5rem' }}>
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
-        accept="image/*"
-        style={{ display: 'none' }}
-      />
+    <div className={styles.container}>
+      <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" style={{ display: 'none' }} />
 
-      {cropImageSrc && (
-        <AvatarCropModal
-          imageSrc={cropImageSrc}
-          onCropComplete={handleCropSave}
-          onCancel={() => setCropImageSrc(null)}
-        />
-      )}
+      {cropImageSrc && <AvatarCropModal imageSrc={cropImageSrc} onCropComplete={handleCropSave} onCancel={() => setCropImageSrc(null)} />}
+      {editingReview && <EditReviewModal review={editingReview} onClose={() => setEditingReview(null)} onUpdated={(up) => setReviews((prev) => prev.map((r) => (r.id === up.id ? up : r)))} />}
 
-      {editingReview && (
-        <EditReviewModal
-          review={editingReview}
-          onClose={() => setEditingReview(null)}
-          onUpdated={handleReviewUpdated}
-        />
-      )}
-
-      {/* Back Button */}
-      <button
-        onClick={() => navigate('/')}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          marginBottom: '2rem',
-          background: 'none',
-          border: 'none',
-          color: '#8a8a8a',
-          cursor: 'pointer',
-          fontSize: '0.9rem',
-          fontWeight: 600,
-          transition: 'color 0.15s ease'
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#8a8a8a')}
-      >
+      <button onClick={() => navigate('/')} className={styles.backBtn}>
         <ArrowLeft size={16} /> Back to films
       </button>
 
-      {/* Modern High-Impact Profile Banner */}
-      <div style={{
-        background: 'linear-gradient(180deg, #111111 0%, #080808 100%)',
-        border: '1px solid #222222',
-        borderRadius: '18px',
-        padding: '2.5rem 2.5rem',
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '2rem',
-        marginBottom: '2.5rem',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', flexWrap: 'wrap' }}>
-          {/* Avatar with Camera Overlay */}
+      <div className={styles.banner}>
+        <div className={styles.userProfileGroup}>
           <div
             onClick={() => !uploadingAvatar && fileInputRef.current?.click()}
             onMouseEnter={() => setAvatarHover(true)}
             onMouseLeave={() => setAvatarHover(false)}
-            title="Click to change and crop avatar"
-            style={{
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              background: '#181818',
-              border: '2px solid #333333',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              position: 'relative',
-              cursor: uploadingAvatar ? 'wait' : 'pointer',
-              overflow: 'hidden',
-              flexShrink: 0
-            }}
+            className={styles.avatarWrapper}
+            style={{ cursor: uploadingAvatar ? 'wait' : 'pointer' }}
           >
             {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt="Profile Avatar"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <img src={profile.avatar_url} alt="Profile Avatar" className={styles.avatarImg} />
             ) : (
               <User size={42} color="#737373" />
             )}
-
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: avatarHover || uploadingAvatar ? 1 : 0,
-                transition: 'opacity 0.15s ease'
-              }}
-            >
-              {uploadingAvatar ? (
-                <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-              ) : (
-                <Camera size={24} color="#ffffff" />
-              )}
+            <div className={styles.avatarOverlay} style={{ opacity: avatarHover || uploadingAvatar ? 1 : 0 }}>
+              {uploadingAvatar ? <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} /> : <Camera size={24} color="#ffffff" />}
             </div>
           </div>
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <h1 style={{ margin: 0, fontSize: '2.3rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#ffffff' }}>
-                {profile?.username || user.email?.split('@')[0]}
-              </h1>
+              <h1 className={styles.userName}>{profile?.username || user.email?.split('@')[0]}</h1>
               {profile?.role === 'admin' && (
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '0.75rem',
-                  background: '#1c1917',
-                  border: '1px solid #44403c',
-                  color: '#fbbf24',
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  fontWeight: 700
-                }}>
+                <span className={styles.adminBadge}>
                   <Shield size={12} /> ADMIN
                 </span>
               )}
             </div>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: '#737373' }}>
-              {user.email}
-            </p>
+            <p className={styles.email}>{user.email}</p>
           </div>
         </div>
 
-        {/* Aggregated Quick Metrics */}
-        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-          <div style={{ textAlign: 'center', minWidth: '70px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.1, display: 'block' }}>
-              {watched.length}
-            </span>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>
-              Watched
-            </p>
-          </div>
-          <div style={{ textAlign: 'center', minWidth: '70px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.1, display: 'block' }}>
-              {watchlist.length}
-            </span>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>
-              Watchlist
-            </p>
-          </div>
-          <div style={{ textAlign: 'center', minWidth: '70px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.1, display: 'block' }}>
-              {reviews.length}
-            </span>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>
-              Reviews
-            </p>
-          </div>
-          <div style={{ textAlign: 'center', minWidth: '70px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#22c55e', lineHeight: 1.1, display: 'block' }}>
-              {averageRating}
-            </span>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>
-              Avg Rating
-            </p>
-          </div>
+        <div className={styles.statsRow}>
+          <div className={styles.statBox}><span className={styles.statVal}>{watched.length}</span><p className={styles.statLabel}>Watched</p></div>
+          <div className={styles.statBox}><span className={styles.statVal}>{watchlist.length}</span><p className={styles.statLabel}>Watchlist</p></div>
+          <div className={styles.statBox}><span className={styles.statVal}>{reviews.length}</span><p className={styles.statLabel}>Reviews</p></div>
+          <div className={styles.statBox}><span className={styles.statValHighlight}>{averageRating}</span><p className={styles.statLabel}>Avg Rating</p></div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '2.5rem',
-        borderBottom: '1px solid #1e1e1e',
-        marginBottom: '2.5rem',
-        overflowX: 'auto'
-      }}>
-        <button
-          onClick={() => setActiveTab('watched')}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '12px 0',
-            fontSize: '0.95rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            color: activeTab === 'watched' ? '#ffffff' : '#737373',
-            borderBottom: activeTab === 'watched' ? '2px solid #22c55e' : '2px solid transparent',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            whiteSpace: 'nowrap'
-          }}
-        >
+      {profile?.bio && <p className={styles.bio}>{profile.bio}</p>}
+
+      {Array.isArray(profile?.favorite_movies) && profile.favorite_movies.length > 0 && (
+        <div style={{ marginBottom: '2.5rem' }}>
+          <p className={styles.sectionHeaderSmall}>Favorite Films</p>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {profile.favorite_movies.map((m) => (
+              <div key={m.tmdb_movie_id} onClick={() => onSelectMovie(m.tmdb_movie_id)} style={{ width: '100px', flexShrink: 0, cursor: 'pointer' }}>
+                <div style={{ width: '100%', aspectRatio: '2/3', borderRadius: '8px', overflow: 'hidden', background: '#141414', border: '1px solid #222222' }}>
+                  <img src={getImageUrl(m.poster_path, 'w185')} alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <p style={{ margin: '6px 0 0 0', fontSize: '0.78rem', color: '#d4d4d4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className={styles.tabsBar}>
+        <button onClick={() => setActiveTab('watched')} className={`${styles.tabBtn} ${activeTab === 'watched' ? styles.tabBtnActive : ''}`}>
           <Eye size={17} /> Watched ({watched.length})
         </button>
-
-        <button
-          onClick={() => setActiveTab('watchlist')}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '12px 0',
-            fontSize: '0.95rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            color: activeTab === 'watchlist' ? '#ffffff' : '#737373',
-            borderBottom: activeTab === 'watchlist' ? '2px solid #22c55e' : '2px solid transparent',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            whiteSpace: 'nowrap'
-          }}
-        >
+        <button onClick={() => setActiveTab('watchlist')} className={`${styles.tabBtn} ${activeTab === 'watchlist' ? styles.tabBtnActive : ''}`}>
           <Bookmark size={17} /> Watchlist ({watchlist.length})
         </button>
-
-        <button
-          onClick={() => setActiveTab('reviewed')}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '12px 0',
-            fontSize: '0.95rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            color: activeTab === 'reviewed' ? '#ffffff' : '#737373',
-            borderBottom: activeTab === 'reviewed' ? '2px solid #22c55e' : '2px solid transparent',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            whiteSpace: 'nowrap'
-          }}
-        >
+        <button onClick={() => setActiveTab('reviewed')} className={`${styles.tabBtn} ${activeTab === 'reviewed' ? styles.tabBtnActive : ''}`}>
           <Star size={17} /> Reviews ({reviews.length})
         </button>
-
-        <button
-          onClick={() => setActiveTab('profile')}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '12px 0',
-            fontSize: '0.95rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            color: activeTab === 'profile' ? '#ffffff' : '#737373',
-            borderBottom: activeTab === 'profile' ? '2px solid #22c55e' : '2px solid transparent',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            whiteSpace: 'nowrap'
-          }}
-        >
+        <button onClick={() => setActiveTab('profile')} className={`${styles.tabBtn} ${activeTab === 'profile' ? styles.tabBtnActive : ''}`}>
           <User size={17} /> Settings
         </button>
       </div>
 
-      {/* Tab Panels */}
       {loading ? (
-        <p style={{ textAlign: 'center', color: '#737373', marginTop: '6rem', fontSize: '1rem' }}>Loading records...</p>
+        <ProfileRecordsSkeleton />
       ) : activeTab === 'watched' ? (
-        watched.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#737373', marginTop: '6rem', fontSize: '1rem' }}>No watched films recorded yet.</p>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: '1.5rem'
-          }}>
-            {watched.map((item) => (
-              <div
-                key={item.id || item.tmdb_movie_id}
-                onClick={() => onSelectMovie(item.tmdb_movie_id)}
-                style={{
-                  backgroundColor: '#0a0a0a',
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  border: '1px solid #1e1e1e',
-                  position: 'relative',
-                  transition: 'transform 0.15s ease'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-4px)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
-              >
-                <img
-                  src={getImageUrl(item.movie_poster_path, 'w500')}
-                  alt={item.movie_title}
-                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                />
-                <div style={{ padding: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {item.movie_title}
-                  </span>
-                  <button
-                    onClick={(e) => handleRemoveItem(e, item, 'watched')}
-                    title="Remove from watched"
-                    style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', padding: '2px' }}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+        <div className={styles.movieGrid}>
+          {watched.map((item) => (
+            <div key={item.id || item.tmdb_movie_id} onClick={() => onSelectMovie(item.tmdb_movie_id)} className={styles.card}>
+              <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+              <div className={styles.cardFooter}>
+                <span className={styles.cardTitle}>{item.movie_title}</span>
+                <button onClick={(e) => handleRemoveItem(e, item, 'watched')} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Trash2 size={15} /></button>
               </div>
-            ))}
-          </div>
-        )
+            </div>
+          ))}
+        </div>
       ) : activeTab === 'watchlist' ? (
-        watchlist.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#737373', marginTop: '6rem', fontSize: '1rem' }}>Your watchlist is empty.</p>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: '1.5rem'
-          }}>
-            {watchlist.map((item) => (
-              <div
-                key={item.id || item.tmdb_movie_id}
-                onClick={() => onSelectMovie(item.tmdb_movie_id)}
-                style={{
-                  backgroundColor: '#0a0a0a',
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  border: '1px solid #1e1e1e',
-                  position: 'relative',
-                  transition: 'transform 0.15s ease'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-4px)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
-              >
-                <img
-                  src={getImageUrl(item.movie_poster_path, 'w500')}
-                  alt={item.movie_title}
-                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                />
-                <div style={{ padding: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {item.movie_title}
-                  </span>
-                  <button
-                    onClick={(e) => handleRemoveItem(e, item, 'watchlist')}
-                    title="Remove from watchlist"
-                    style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', padding: '2px' }}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+        <div className={styles.movieGrid}>
+          {watchlist.map((item) => (
+            <div key={item.id || item.tmdb_movie_id} onClick={() => onSelectMovie(item.tmdb_movie_id)} className={styles.card}>
+              <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+              <div className={styles.cardFooter}>
+                <span className={styles.cardTitle}>{item.movie_title}</span>
+                <button onClick={(e) => handleRemoveItem(e, item, 'watchlist')} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Trash2 size={15} /></button>
               </div>
-            ))}
-          </div>
-        )
+            </div>
+          ))}
+        </div>
       ) : activeTab === 'reviewed' ? (
-        <div>
-          {reviews.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#737373', marginTop: '6rem', fontSize: '1rem' }}>No reviews written yet.</p>
-          ) : (
-            <>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                marginBottom: '1.75rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <ArrowUpDown size={15} color="#737373" />
-                  <span style={{ fontSize: '0.85rem', color: '#a3a3a3' }}>Sort:</span>
-                  <select
-                    value={reviewSort}
-                    onChange={(e) => setReviewSort(e.target.value)}
-                    style={{
-                      background: '#111111',
-                      border: '1px solid #242424',
-                      color: '#ffffff',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="rating-high">Highest Rating</option>
-                    <option value="rating-low">Lowest Rating</option>
-                    <option value="title">Title (A–Z)</option>
-                  </select>
-                </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.5rem' }}>
+          {sortedReviews.map((rev) => (
+            <div key={rev.id} onClick={() => onSelectMovie(rev.tmdb_movie_id)} style={{ background: '#0d0d0d', border: '1px solid #222222', borderRadius: '12px', padding: '1.1rem 1.2rem', display: 'flex', gap: '1.1rem', cursor: 'pointer' }}>
+              <div style={{ width: '68px', flexShrink: 0, aspectRatio: '2/3', borderRadius: '6px', overflow: 'hidden', background: '#141414' }}>
+                <img src={getImageUrl(rev.movie_poster_path, 'w185')} alt={rev.movie_title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.5rem' }}>
-                {sortedReviews.map((rev) => (
-                  <div
-                    key={rev.id}
-                    onClick={() => onSelectMovie(rev.tmdb_movie_id)}
-                    style={{
-                      background: '#0d0d0d',
-                      border: '1px solid #222222',
-                      borderRadius: '12px',
-                      padding: '1.25rem',
-                      display: 'flex',
-                      gap: '1.2rem',
-                      cursor: 'pointer',
-                      transition: 'border-color 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#383838')}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#222222')}
-                  >
-                    <div style={{ width: '80px', flexShrink: 0, aspectRatio: '2/3', borderRadius: '6px', overflow: 'hidden', background: '#141414' }}>
-                      <img
-                        src={getImageUrl(rev.movie_poster_path, 'w185')}
-                        alt={rev.movie_title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                      />
-                    </div>
-
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, justifyContent: 'space-between' }}>
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {rev.movie_title}
-                          </h3>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingReview(rev);
-                              }}
-                              title="Edit review"
-                              style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', padding: '2px' }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = '#38bdf8')}
-                              onMouseLeave={(e) => (e.currentTarget.style.color = '#737373')}
-                            >
-                              <Edit3 size={15} />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteReview(e, rev.id)}
-                              title="Delete review"
-                              style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', padding: '2px' }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-                              onMouseLeave={(e) => (e.currentTarget.style.color = '#737373')}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '0.75rem' }}>
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={12}
-                              fill={i < rev.rating ? '#22c55e' : 'transparent'}
-                              color={i < rev.rating ? '#22c55e' : '#333333'}
-                            />
-                          ))}
-                          <span style={{ fontSize: '0.8rem', color: '#a3a3a3', marginLeft: '6px', fontWeight: 600 }}>
-                            {rev.rating}/5
-                          </span>
-                        </div>
-
-                        <p style={{
-                          margin: 0,
-                          fontSize: '0.88rem',
-                          color: '#d4d4d4',
-                          lineHeight: '1.5',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
-                        }}>
-                          {rev.review_text}
-                        </p>
-                      </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700, color: '#ffffff' }}>{rev.movie_title}</h3>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button onClick={(e) => { e.stopPropagation(); setEditingReview(rev); }} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Edit3 size={14} /></button>
+                      <button onClick={(e) => handleDeleteReview(e, rev.id)} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Trash2 size={14} /></button>
                     </div>
                   </div>
-                ))}
+                  <StarRating rating={rev.rating || 0} interactive={false} size={15} />
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.86rem', color: '#d4d4d4', lineHeight: '1.5' }}>{rev.review_text}</p>
+                </div>
               </div>
-            </>
-          )}
+            </div>
+          ))}
         </div>
       ) : (
-        /* Settings Tab */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '2rem', width: '100%' }}>
-          {/* Display Name */}
-          <div style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', padding: '2.25rem', borderRadius: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.75rem' }}>
-              <User size={22} color="#ffffff" />
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>Change Display Name</h3>
-            </div>
-
+        <div className={styles.settingsGrid}>
+          <div className={styles.settingsBox}>
+            <div className={styles.settingsHeader}><User size={22} color="#ffffff" /><h3 style={{ margin: 0, fontSize: '1.15rem' }}>Display Name</h3></div>
             <form onSubmit={handleUpdateUsername} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#8a8a8a', marginBottom: '8px', fontWeight: 500 }}>
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  value={usernameInput}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                  placeholder="Enter display name..."
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    background: '#121212',
-                    border: '1px solid #262626',
-                    borderRadius: '8px',
-                    color: '#ffffff',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {usernameStatus.msg && (
-                <p style={{ margin: 0, fontSize: '0.85rem', color: usernameStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>
-                  {usernameStatus.msg}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={savingUsername}
-                style={{
-                  alignSelf: 'flex-start',
-                  padding: '10px 20px',
-                  background: '#ffffff',
-                  color: '#000000',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  cursor: 'pointer'
-                }}
-              >
-                {savingUsername ? 'Saving...' : 'Update Name'}
-              </button>
+              <div><label className={styles.formLabel}>Display Name</label><input type="text" value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} className={styles.formInput} /></div>
+              {usernameStatus.msg && <p style={{ margin: 0, fontSize: '0.85rem', color: usernameStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>{usernameStatus.msg}</p>}
+              <button type="submit" disabled={savingUsername} className={styles.primaryActionBtn}>{savingUsername ? 'Saving...' : 'Update Name'}</button>
             </form>
           </div>
 
-          {/* Password */}
-          <div style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', padding: '2.25rem', borderRadius: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.75rem' }}>
-              <Lock size={22} color="#ffffff" />
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>Change Password</h3>
-            </div>
+          <div className={styles.settingsBox}>
+            <div className={styles.settingsHeader}><Edit3 size={22} color="#ffffff" /><h3 style={{ margin: 0, fontSize: '1.15rem' }}>Bio</h3></div>
+            <form onSubmit={handleUpdateBio} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div><label className={styles.formLabel}>About You</label><textarea rows={4} value={bioInput} onChange={(e) => setBioInput(e.target.value)} maxLength={280} className={styles.formInput} style={{ resize: 'vertical' }} /></div>
+              {bioStatus.msg && <p style={{ margin: 0, fontSize: '0.85rem', color: bioStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>{bioStatus.msg}</p>}
+              <button type="submit" disabled={savingBio} className={styles.primaryActionBtn}>{savingBio ? 'Saving...' : 'Update Bio'}</button>
+            </form>
+          </div>
 
+          <div className={styles.settingsBox}>
+            <div className={styles.settingsHeader}><Lock size={22} color="#ffffff" /><h3 style={{ margin: 0, fontSize: '1.15rem' }}>Password</h3></div>
             <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#8a8a8a', marginBottom: '8px', fontWeight: 500 }}>
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    background: '#121212',
-                    border: '1px solid #262626',
-                    borderRadius: '8px',
-                    color: '#ffffff',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#8a8a8a', marginBottom: '8px', fontWeight: 500 }}>
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    background: '#121212',
-                    border: '1px solid #262626',
-                    borderRadius: '8px',
-                    color: '#ffffff',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {passwordStatus.msg && (
-                <p style={{ margin: 0, fontSize: '0.85rem', color: passwordStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>
-                  {passwordStatus.msg}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={savingPassword}
-                style={{
-                  alignSelf: 'flex-start',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 20px',
-                  background: '#ffffff',
-                  color: '#000000',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <KeyRound size={16} />
-                {savingPassword ? 'Updating...' : 'Update Password'}
-              </button>
+              <div><label className={styles.formLabel}>New Password</label><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={styles.formInput} /></div>
+              <div><label className={styles.formLabel}>Confirm Password</label><input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={styles.formInput} /></div>
+              {passwordStatus.msg && <p style={{ margin: 0, fontSize: '0.85rem', color: passwordStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>{passwordStatus.msg}</p>}
+              <button type="submit" disabled={savingPassword} className={styles.primaryActionBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><KeyRound size={16} />{savingPassword ? 'Updating...' : 'Update Password'}</button>
             </form>
           </div>
         </div>

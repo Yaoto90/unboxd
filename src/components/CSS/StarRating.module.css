@@ -1,0 +1,22 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.starWrapper {
+  position: relative;
+  user-select: none;
+}
+
+.starBg {
+  position: absolute;
+  inset: 0;
+}
+
+.starFill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}

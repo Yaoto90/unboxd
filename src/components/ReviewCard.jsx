@@ -3,18 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import StarRating from './StarRating';
-import { Heart, Trash2 } from 'lucide-react';
+import { Heart, Trash2, Pencil, EyeOff, Eye } from 'lucide-react';
 import { getImageUrl } from '../services/tmdb';
+import styles from './CSS/ReviewCard.module.css';
 
 export default function ReviewCard({
   review,
   onSelectMovie,
   onDelete,
+  onEdit,
   showMoviePoster = false,
   onCloseModal,
   onOpenAuth
 }) {
-  const { user, profile: authProfile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [liked, setLiked] = useState(
@@ -22,10 +24,12 @@ export default function ReviewCard({
   );
   const [likeCount, setLikeCount] = useState(review.review_likes?.length || 0);
   const [loadingLike, setLoadingLike] = useState(false);
+  const [revealedSpoiler, setRevealedSpoiler] = useState(!review.contains_spoilers);
 
   useEffect(() => {
     setLiked(review.review_likes?.some((l) => l.user_id === user?.id) || false);
     setLikeCount(review.review_likes?.length || 0);
+    setRevealedSpoiler(!review.contains_spoilers);
   }, [user, review]);
 
   const handleToggleLike = async (e) => {
@@ -85,9 +89,7 @@ export default function ReviewCard({
       onCloseModal();
     }
 
-    // Direct to personal dashboard if this is your own review
     const isCurrentUser = Boolean(user && review.user_id === user.id);
-
     if (isCurrentUser) {
       navigate('/profile');
     } else if (username && username !== 'user') {
@@ -95,204 +97,124 @@ export default function ReviewCard({
     }
   };
 
+  const hasSpoiler = Boolean(review.contains_spoilers && !revealedSpoiler);
+
   return (
     <div
       onClick={() => onSelectMovie && onSelectMovie(review.tmdb_movie_id, review.id)}
-      style={{
-        background: '#0d0d0d',
-        border: '1px solid #222222',
-        borderRadius: showMoviePoster ? '10px' : '16px',
-        padding: showMoviePoster ? '0.85rem 1rem' : '2rem 2.25rem',
-        display: 'flex',
-        gap: showMoviePoster ? '0.9rem' : '1.75rem',
-        cursor: onSelectMovie ? 'pointer' : 'default',
-        transition: 'border-color 0.15s ease, transform 0.15s ease',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}
-      onMouseEnter={(e) => {
-        if (onSelectMovie) {
-          e.currentTarget.style.borderColor = '#383838';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (onSelectMovie) {
-          e.currentTarget.style.borderColor = '#222222';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }
-      }}
+      className={`${styles.card} ${showMoviePoster ? styles.feedMode : styles.modalMode} ${onSelectMovie ? styles.cardInteractive : ''}`}
     >
-      {/* Movie Poster */}
       {showMoviePoster && review.movie_poster_path && (
-        <div
-          style={{
-            width: '56px',
-            height: '84px',
-            borderRadius: '6px',
-            overflow: 'hidden',
-            flexShrink: 0,
-            background: '#141414',
-            border: '1px solid #222222'
-          }}
-        >
+        <div className={styles.posterWrap}>
           <img
             src={getImageUrl(review.movie_poster_path, 'w185')}
             alt={review.movie_title || 'Film'}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            className={styles.posterImg}
           />
         </div>
       )}
 
-      {/* Review Content */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div>
-          {showMoviePoster && (
-            <h4
-              style={{
-                margin: '0 0 0.35rem 0',
-                fontSize: '0.92rem',
-                fontWeight: 700,
-                color: '#ffffff',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}
-            >
-              {review.movie_title}
-            </h4>
-          )}
+      <div className={styles.mainBody}>
+        {showMoviePoster && (
+          <h4 className={styles.movieTitle}>{review.movie_title}</h4>
+        )}
 
-          {/* User Row + Rating */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: showMoviePoster ? '0.55rem' : '1.25rem',
-              marginBottom: showMoviePoster ? '0.45rem' : '1.25rem',
-              flexWrap: 'wrap'
-            }}
-          >
-            <div
-              onClick={handleUserClick}
-              style={{ display: 'flex', alignItems: 'center', gap: showMoviePoster ? '6px' : '12px', cursor: 'pointer' }}
-            >
-              <div
-                style={{
-                  width: showMoviePoster ? '22px' : '42px',
-                  height: showMoviePoster ? '22px' : '42px',
-                  borderRadius: '50%',
-                  background: '#1a1a1a',
-                  border: '1px solid #333333',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: showMoviePoster ? '0.7rem' : '1.05rem',
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  overflow: 'hidden',
-                  flexShrink: 0
-                }}
-              >
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={username}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block'
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <span>{initial}</span>
-                )}
-              </div>
-              <span
-                style={{
-                  fontSize: showMoviePoster ? '0.82rem' : '1.15rem',
-                  fontWeight: 600,
-                  color: '#ffffff',
-                  transition: 'color 0.15s ease'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#38bdf8')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#ffffff')}
-              >
-                {username}
-              </span>
+        <div className={styles.userRow}>
+          <div onClick={handleUserClick} className={styles.userInfo}>
+            <div className={styles.avatarCircle}>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={username}
+                  className={styles.avatarImg}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span>{initial}</span>
+              )}
             </div>
-
-            <span style={{ color: '#444444', fontSize: showMoviePoster ? '0.75rem' : '1rem' }}>•</span>
-            <StarRating rating={review.rating || 0} interactive={false} size={showMoviePoster ? 12 : 20} />
+            <span className={styles.username}>{username}</span>
           </div>
 
-          {/* Review Text */}
-          <p
-            style={{
-              margin: 0,
-              fontSize: showMoviePoster ? '0.85rem' : '1.28rem',
-              color: '#d4d4d4',
-              lineHeight: showMoviePoster ? '1.45' : '1.7',
-              wordBreak: 'break-word',
-              display: '-webkit-box',
-              WebkitLineClamp: showMoviePoster ? 2 : 6,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
-            }}
-          >
-            {review.review_text}
-          </p>
+          <StarRating rating={review.rating || 0} interactive={false} size={14} />
         </div>
 
-        {/* Footer Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: showMoviePoster ? '0.6rem' : '1.5rem' }}>
-          <button
-            onClick={handleToggleLike}
-            title={liked ? 'Unlike' : 'Like'}
-            style={{
-              background: 'none',
-              border: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              color: liked ? '#ef4444' : '#737373',
-              cursor: 'pointer',
-              padding: '2px 0',
-              fontSize: showMoviePoster ? '0.78rem' : '1.05rem',
-              fontWeight: 600,
-              transition: 'color 0.15s ease, transform 0.1s ease'
-            }}
-            onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
-            onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-          >
-            <Heart size={showMoviePoster ? 13 : 20} fill={liked ? '#ef4444' : 'transparent'} />
-            <span>{likeCount}</span>
-          </button>
+        <div className={styles.textSection}>
+          {hasSpoiler ? (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                setRevealedSpoiler(true);
+              }}
+              className={styles.spoilerBanner}
+            >
+              <EyeOff size={18} color="#8a8a8a" style={{ marginBottom: '4px' }} />
+              <span className={styles.spoilerTitle}>Contains Spoilers</span>
+              <span className={styles.spoilerSubtitle}>Tap to reveal</span>
+            </div>
+          ) : (
+            <div className={showMoviePoster ? styles.scrollTextBoxFeed : styles.scrollTextBox}>
+              <p className={styles.reviewText}>{review.review_text}</p>
+            </div>
+          )}
+        </div>
+      </div>
 
-          {user?.id === review.user_id && onDelete && (
+      <div className={styles.footer}>
+        <button
+          onClick={handleToggleLike}
+          title={liked ? 'Unlike' : 'Like'}
+          className={`${styles.likeBtn} ${liked ? styles.liked : styles.unliked}`}
+        >
+          <Heart size={14} fill={liked ? '#ef4444' : 'transparent'} />
+          <span>{likeCount}</span>
+        </button>
+
+        <div className={styles.actionsRight}>
+          {review.contains_spoilers && revealedSpoiler && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(review.id);
+                setRevealedSpoiler(false);
               }}
-              title="Delete review"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#737373',
-                cursor: 'pointer',
-                padding: '2px',
-                transition: 'color 0.15s ease'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#737373')}
+              title="Hide spoilers again"
+              className={styles.hideBtn}
             >
-              <Trash2 size={showMoviePoster ? 13 : 18} />
+              <Eye size={13} />
+              <span>Hide</span>
             </button>
+          )}
+
+          {user?.id === review.user_id && (
+            <>
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(review);
+                  }}
+                  title="Edit review"
+                  className={styles.iconBtn}
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
+
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(review.id);
+                  }}
+                  title="Delete review"
+                  className={`${styles.iconBtn} ${styles.iconBtnDelete}`}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

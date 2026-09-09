@@ -1,0 +1,247 @@
+.card {
+  background: #0d0d0d;
+  border: 1px solid #222222;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.cardInteractive {
+  cursor: pointer;
+}
+
+.cardInteractive:hover {
+  border-color: #383838;
+  transform: translateY(-2px);
+}
+
+.modalMode {
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  flex-direction: column;
+  gap: 0.65rem;
+  height: auto;
+  min-height: 120px;
+}
+
+.feedMode {
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  flex-direction: row;
+  gap: 0.9rem;
+  height: auto;
+}
+
+.posterWrap {
+  width: 56px;
+  height: 84px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #141414;
+  border: 1px solid #222222;
+}
+
+.posterImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mainBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.movieTitle {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.avatarCircle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  border: 1px solid #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #ffffff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.username {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #ffffff;
+  transition: color 0.15s ease;
+}
+
+.username:hover {
+  color: #38bdf8;
+}
+
+.textSection {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.spoilerBanner {
+  position: relative;
+  width: 100%;
+  height: 75px;
+  border-radius: 8px;
+  background: #141414;
+  border: 1px solid #282828;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.spoilerTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.spoilerSubtitle {
+  font-size: 0.72rem;
+  color: #888888;
+}
+
+.scrollTextBox {
+  max-height: 115px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.scrollTextBoxFeed {
+  max-height: 50px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.reviewText {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #d4d4d4;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #1a1a1a;
+}
+
+.likeBtn {
+  background: none;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 2px 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.likeBtn:active {
+  transform: scale(0.92);
+}
+
+.liked {
+  color: #ef4444;
+}
+
+.unliked {
+  color: #737373;
+}
+
+.actionsRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hideBtn {
+  background: none;
+  border: none;
+  color: #737373;
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+}
+
+.hideBtn:hover {
+  color: #ffffff;
+}
+
+.iconBtn {
+  background: none;
+  border: none;
+  color: #737373;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.iconBtn:hover {
+  color: #38bdf8;
+}
+
+.iconBtnDelete:hover {
+  color: #ef4444;
+}

@@ -1,0 +1,253 @@
+.appContainer {
+  min-height: 100vh;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.homeContainer {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 5rem 2rem;
+}
+
+/* Feed Filter Bar & Search */
+.filterBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #1e1e1e;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tabList {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #0e0e0e;
+  color: #8a8a8a;
+  border: 1px solid #222222;
+  transition: all 0.15s ease;
+}
+
+.tabButton:hover {
+  color: #ffffff;
+  border-color: #383838;
+}
+
+.tabButtonActive {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.tabButtonActive:hover {
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.searchContainer {
+  position: relative;
+  width: 220px;
+  cursor: pointer;
+}
+
+/* UI Improvement: Lightened background & visible border for contrast */
+.searchInput {
+  width: 100%;
+  padding: 7px 32px 7px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid #333333;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.searchInput:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #444444;
+}
+
+.searchIcon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #737373;
+}
+
+/* Movie Grid & Cards */
+.movieGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: #0a0a0a;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #1e1e1e;
+  position: relative;
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: #383838;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+}
+
+.posterWrap {
+  width: 100%;
+  aspect-ratio: 2/3;
+  position: relative;
+  overflow: hidden;
+  background: #121212;
+}
+
+/* UI Improvement: Added brightness increase on hover */
+.poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.card:hover .poster {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+/* UI Improvement: Card body spacing */
+.cardBody {
+  padding: 1rem 1.2rem;
+}
+
+/* UI Improvement: Typographic hierarchy */
+.cardTitle {
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #f3f4f6;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.card:hover .cardTitle {
+  color: #ffffff;
+}
+
+.cardMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.ratingBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.watchlistBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid #262626;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+.card:hover .watchlistBtn {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.watchlistBtnActive {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+/* Utilities */
+.messageText {
+  text-align: center;
+  margin-top: 4rem;
+  font-size: 0.9rem;
+}
+
+.errorText {
+  color: #ef4444;
+}
+
+.emptyText {
+  color: #737373;
+}
+
+/* Community Reviews */
+.reviewsSection {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid #1e1e1e;
+}
+
+.reviewsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.reviewsTitle {
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.reviewsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
+}
