@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -24,77 +24,30 @@ import {
   Tv,
   Building2,
   Sparkles,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from 'lucide-react';
 import PersonDetailModal from './PersonDetailModal';
 import CompanyDetailModal from './CompanyDetailModal';
 import styles from './CSS/MovieDetailModal.module.css';
 
-function MovieDetailModalSkeleton() {
-  return (
-    <div style={{ position: 'relative', zIndex: 1, padding: '3.5rem 4rem 4rem 4rem' }}>
-      <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-        <div
-          className="skeleton-box"
-          style={{
-            width: '230px',
-            height: '345px',
-            borderRadius: '12px',
-            border: '1px solid #1a1a1a',
-            flexShrink: 0
-          }}
-        />
+// Smart Router: Bypasses TMDB limits to generate direct streaming platform URLs
+const getProviderLink = (providerName, movieTitle) => {
+  const title = encodeURIComponent(movieTitle);
+  const name = providerName.toLowerCase();
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            <div className="skeleton-box" style={{ width: '55%', height: '40px', borderRadius: '8px' }} />
-            <div className="skeleton-box" style={{ width: '70px', height: '30px', borderRadius: '6px' }} />
-          </div>
-
-          <div className="skeleton-box" style={{ width: '220px', height: '18px', borderRadius: '4px', marginBottom: '1.4rem' }} />
-
-          <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <div className="skeleton-box" style={{ width: '100px', height: '22px', borderRadius: '6px' }} />
-            <div className="skeleton-box" style={{ width: '85px', height: '22px', borderRadius: '6px' }} />
-            <div className="skeleton-box" style={{ width: '65px', height: '22px', borderRadius: '6px' }} />
-            <div className="skeleton-box" style={{ width: '90px', height: '22px', borderRadius: '6px' }} />
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.55rem', marginBottom: '1.8rem' }}>
-            <div className="skeleton-box" style={{ width: '70px', height: '26px', borderRadius: '7px' }} />
-            <div className="skeleton-box" style={{ width: '85px', height: '26px', borderRadius: '7px' }} />
-            <div className="skeleton-box" style={{ width: '75px', height: '26px', borderRadius: '7px' }} />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div className="skeleton-box" style={{ width: '135px', height: '30px', borderRadius: '7px' }} />
-            <div className="skeleton-box" style={{ width: '135px', height: '30px', borderRadius: '7px' }} />
-            <div className="skeleton-box" style={{ width: '135px', height: '30px', borderRadius: '7px' }} />
-          </div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: '2.8rem' }}>
-        <div className="skeleton-box" style={{ width: '40%', height: '20px', borderRadius: '6px', marginBottom: '1rem' }} />
-        <div className="skeleton-box" style={{ width: '100%', height: '15px', borderRadius: '4px', marginBottom: '0.55rem' }} />
-        <div className="skeleton-box" style={{ width: '92%', height: '15px', borderRadius: '4px', marginBottom: '0.55rem' }} />
-        <div className="skeleton-box" style={{ width: '65%', height: '15px', borderRadius: '4px' }} />
-      </div>
-
-      <div style={{ marginTop: '3.5rem' }}>
-        <div className="skeleton-box" style={{ width: '110px', height: '16px', borderRadius: '4px', marginBottom: '1.25rem' }} />
-        <div style={{ display: 'flex', gap: '1.75rem' }}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-              <div className="skeleton-box" style={{ width: '92px', height: '92px', borderRadius: '50%' }} />
-              <div className="skeleton-box" style={{ width: '65px', height: '12px', borderRadius: '4px' }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+  if (name.includes('netflix')) return `https://www.netflix.com/search?q=${title}`;
+  if (name.includes('amazon') || name.includes('prime')) return `https://www.amazon.com/s?k=${title}&i=instant-video`;
+  if (name.includes('disney')) return `https://www.disneyplus.com/search?q=${title}`;
+  if (name.includes('hulu')) return `https://www.hulu.com/search?q=${title}`;
+  if (name.includes('apple')) return `https://tv.apple.com/search?term=${title}`;
+  if (name.includes('max') || name.includes('hbo')) return `https://play.max.com/search?q=${title}`;
+  if (name.includes('peacock')) return `https://www.peacocktv.com/watch/search?q=${title}`;
+  if (name.includes('paramount')) return `https://www.paramountplus.com/search/?q=${title}`;
+  if (name.includes('crunchyroll')) return `https://www.crunchyroll.com/search?q=${title}`;
+  
+  return `https://www.google.com/search?q=${encodeURIComponent(`Watch ${movieTitle} on ${providerName}`)}`;
+};
 
 function RecommendationMovieCard({ film, onSelect }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -105,6 +58,7 @@ function RecommendationMovieCard({ film, onSelect }) {
       onClick={() => onSelect(film.id)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      className={styles.recCard}
       style={{
         minWidth: '150px',
         maxWidth: '150px',
@@ -167,26 +121,52 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const { user, profile, refreshProfile } = useAuth();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // UI State
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
+  const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [reviewSort, setReviewSort] = useState('newest'); 
+
+  // Interaction State
   const [rating, setRating] = useState(4.0);
   const [reviewText, setReviewText] = useState('');
   const [containsSpoilers, setContainsSpoilers] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
-  const [reviews, setReviews] = useState([]);
-  const [editingReviewId, setEditingReviewId] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
-  const [selectedPersonId, setSelectedPersonId] = useState(null);
-  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [savingFavorite, setSavingFavorite] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [editingReviewId, setEditingReviewId] = useState(null);
 
   const [watchProviders, setWatchProviders] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
 
   const modalContentRef = useRef(null);
   const numericMovieId = Number(movieId);
+
+  // Background scroll lock logic
+  useEffect(() => {
+    if (numericMovieId) {
+      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+      document.body.dataset.modalLockCount = currentCount + 1;
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      if (numericMovieId) {
+        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+        const nextCount = Math.max(0, currentCount - 1);
+        document.body.dataset.modalLockCount = nextCount;
+        if (nextCount === 0) {
+          document.body.style.overflow = '';
+        }
+      }
+    };
+  }, [numericMovieId]);
 
   useEffect(() => {
     if (!numericMovieId) return;
@@ -199,6 +179,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
     setIsWatched(false);
     setInWatchlist(false);
     setLoading(true);
+    setIsReviewModalOpen(false);
 
     if (modalContentRef.current) modalContentRef.current.scrollTop = 0;
 
@@ -266,21 +247,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
     setIsFavorited(favs.some((m) => m.tmdb_movie_id === numericMovieId));
   }, [profile, numericMovieId]);
 
-  useEffect(() => {
-    const handleStatusChange = (e) => {
-      const { movieId: updatedId, isWatched: newWatched, reviewDeleted, reviewId: deletedReviewId } = e.detail || {};
-      if (Number(updatedId) === numericMovieId) {
-        if (typeof newWatched === 'boolean') setIsWatched(newWatched);
-        if (reviewDeleted && deletedReviewId) {
-          setReviews((prev) => prev.filter((r) => String(r.id) !== String(deletedReviewId)));
-        }
-      }
-    };
-
-    window.addEventListener('unboxd:movie-status-changed', handleStatusChange);
-    return () => window.removeEventListener('unboxd:movie-status-changed', handleStatusChange);
-  }, [numericMovieId]);
-
   const handleShare = async () => {
     const url = new URL(window.location.href);
     url.searchParams.set('movie', movieId);
@@ -314,23 +280,12 @@ export default function MovieDetailModal({ movieId, onClose }) {
   };
 
   const toggleWatchlist = async () => {
-    if (!user) return alert('Please sign in to manage your watchlist.');
+    if (!user) return;
     if (inWatchlist) {
-      await supabase
-        .from('watchlists')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('tmdb_movie_id', numericMovieId)
-        .or('type.eq.watchlist,type.is.null');
+      await supabase.from('watchlists').delete().eq('user_id', user.id).eq('tmdb_movie_id', numericMovieId).or('type.eq.watchlist,type.is.null');
       setInWatchlist(false);
     } else {
-      await supabase
-        .from('watchlists')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('tmdb_movie_id', numericMovieId)
-        .eq('type', 'watched');
-
+      await supabase.from('watchlists').delete().eq('user_id', user.id).eq('tmdb_movie_id', numericMovieId).eq('type', 'watched');
       await supabase.from('watchlists').insert({
         user_id: user.id,
         tmdb_movie_id: numericMovieId,
@@ -339,72 +294,33 @@ export default function MovieDetailModal({ movieId, onClose }) {
         type: 'watchlist'
       });
       setInWatchlist(true);
-
-      if (isWatched) {
-        setIsWatched(false);
-        window.dispatchEvent(
-          new CustomEvent('unboxd:movie-status-changed', {
-            detail: { movieId: numericMovieId, isWatched: false, reviewDeleted: false }
-          })
-        );
-      }
+      if (isWatched) setIsWatched(false);
     }
   };
 
   const toggleWatched = async () => {
-    if (!user) return alert('Please sign in to log watched films.');
+    if (!user) return;
     if (isWatched) {
-      await supabase
-        .from('watchlists')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('tmdb_movie_id', numericMovieId)
-        .eq('type', 'watched');
-
+      await supabase.from('watchlists').delete().eq('user_id', user.id).eq('tmdb_movie_id', numericMovieId).eq('type', 'watched');
       setIsWatched(false);
-
-      window.dispatchEvent(
-        new CustomEvent('unboxd:movie-status-changed', {
-          detail: { movieId: numericMovieId, isWatched: false, reviewDeleted: false }
-        })
-      );
     } else {
-      const { error: watchedInsertError } = await supabase.from('watchlists').insert({
+      await supabase.from('watchlists').insert({
         user_id: user.id,
         tmdb_movie_id: numericMovieId,
         movie_title: movie?.title || '',
         movie_poster_path: movie?.poster_path || '',
         type: 'watched'
       });
-
-      if (watchedInsertError) {
-        console.error('Failed to mark as watched:', watchedInsertError);
-        alert(watchedInsertError.message || 'Failed to mark as watched.');
-        return;
-      }
-
       setIsWatched(true);
-
       if (inWatchlist) {
-        await supabase
-          .from('watchlists')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('tmdb_movie_id', numericMovieId)
-          .or('type.eq.watchlist,type.is.null');
+        await supabase.from('watchlists').delete().eq('user_id', user.id).eq('tmdb_movie_id', numericMovieId).or('type.eq.watchlist,type.is.null');
         setInWatchlist(false);
       }
-
-      window.dispatchEvent(
-        new CustomEvent('unboxd:movie-status-changed', {
-          detail: { movieId: numericMovieId, isWatched: true, reviewDeleted: false }
-        })
-      );
     }
   };
 
   const toggleFavorite = async () => {
-    if (!user) return alert('Please sign in to manage favorites.');
+    if (!user) return;
     const currentFavs = Array.isArray(profile?.favorite_movies) ? profile.favorite_movies : [];
     let updatedFavs;
 
@@ -412,29 +328,17 @@ export default function MovieDetailModal({ movieId, onClose }) {
       updatedFavs = currentFavs.filter((m) => m.tmdb_movie_id !== numericMovieId);
     } else {
       if (currentFavs.length >= 4) {
-        alert('You can only have 4 favorite films. Remove one from your profile settings first.');
+        alert('You can only have 4 favorite films.');
         return;
       }
-      updatedFavs = [
-        ...currentFavs,
-        { tmdb_movie_id: numericMovieId, title: movie?.title || '', poster_path: movie?.poster_path || '' }
-      ];
+      updatedFavs = [...currentFavs, { tmdb_movie_id: numericMovieId, title: movie?.title || '', poster_path: movie?.poster_path || '' }];
     }
 
     setSavingFavorite(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ favorite_movies: updatedFavs })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
+      await supabase.from('profiles').update({ favorite_movies: updatedFavs }).eq('id', user.id);
       setIsFavorited(!isFavorited);
       await refreshProfile();
-    } catch (err) {
-      console.error('Failed to update favorites:', err);
-      alert(err.message || 'Failed to update favorites.');
     } finally {
       setSavingFavorite(false);
     }
@@ -442,7 +346,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return alert('Please sign in to review.');
+    if (!user) return;
     if (!reviewText.trim()) return;
 
     setSubmitting(true);
@@ -450,84 +354,42 @@ export default function MovieDetailModal({ movieId, onClose }) {
       if (editingReviewId) {
         const { data, error } = await supabase
           .from('reviews')
-          .update({
-            rating: parseFloat(rating),
-            review_text: reviewText,
-            contains_spoilers: containsSpoilers
-          })
+          .update({ rating: parseFloat(rating), review_text: reviewText, contains_spoilers: containsSpoilers })
           .eq('id', editingReviewId)
           .select('*, profiles(username, avatar_url), review_likes(user_id)')
           .single();
 
         if (error) throw error;
-
-        if (data) {
-          setReviews((prev) => prev.map((r) => (r.id === editingReviewId ? data : r)));
-        }
-
+        if (data) setReviews((prev) => prev.map((r) => (r.id === editingReviewId ? data : r)));
+        
         setEditingReviewId(null);
-        setReviewText('');
-        setRating(4.0);
-        setContainsSpoilers(false);
-        setSubmitting(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('reviews')
-        .insert({
-          user_id: user.id,
-          tmdb_movie_id: numericMovieId,
-          movie_title: movie?.title || '',
-          movie_poster_path: movie?.poster_path || '',
-          rating: parseFloat(rating),
-          review_text: reviewText,
-          contains_spoilers: containsSpoilers
-        })
-        .select('*, profiles(username, avatar_url), review_likes(user_id)')
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setReviews([data, ...reviews]);
-        setReviewText('');
-        setContainsSpoilers(false);
-
-        await supabase
-          .from('watchlists')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('tmdb_movie_id', numericMovieId)
-          .or('type.eq.watchlist,type.is.null');
-
-        const { data: existingWatched } = await supabase
-          .from('watchlists')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('tmdb_movie_id', numericMovieId)
-          .eq('type', 'watched')
-          .maybeSingle();
-
-        if (!existingWatched) {
-          await supabase.from('watchlists').insert({
+      } else {
+        const { data, error } = await supabase
+          .from('reviews')
+          .insert({
             user_id: user.id,
             tmdb_movie_id: numericMovieId,
             movie_title: movie?.title || '',
             movie_poster_path: movie?.poster_path || '',
-            type: 'watched'
-          });
-        }
-
-        setIsWatched(true);
-        setInWatchlist(false);
-
-        window.dispatchEvent(
-          new CustomEvent('unboxd:movie-status-changed', {
-            detail: { movieId: numericMovieId, isWatched: true, reviewDeleted: false }
+            rating: parseFloat(rating),
+            review_text: reviewText,
+            contains_spoilers: containsSpoilers
           })
-        );
+          .select('*, profiles(username, avatar_url), review_likes(user_id)')
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setReviews([data, ...reviews]);
+          setIsWatched(true);
+          setInWatchlist(false);
+        }
       }
+      
+      setReviewText('');
+      setContainsSpoilers(false);
+      setIsReviewModalOpen(false);
+      
     } catch (err) {
       alert(err.message || 'Failed to submit review');
     } finally {
@@ -540,17 +402,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
     const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
     if (!error) {
       setReviews((prev) => prev.filter((r) => String(r.id) !== String(reviewId)));
-      if (editingReviewId === reviewId) {
-        setEditingReviewId(null);
-        setReviewText('');
-        setRating(4.0);
-        setContainsSpoilers(false);
-      }
-      window.dispatchEvent(
-        new CustomEvent('unboxd:movie-status-changed', {
-          detail: { movieId: numericMovieId, reviewDeleted: true, reviewId }
-        })
-      );
     }
   };
 
@@ -559,18 +410,15 @@ export default function MovieDetailModal({ movieId, onClose }) {
     setRating(review.rating || 0);
     setReviewText(review.review_text || '');
     setContainsSpoilers(Boolean(review.contains_spoilers));
-    const formEl = document.getElementById('review-form');
-    if (formEl) {
-      formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    setIsReviewModalOpen(true);
   };
 
-  const handleCancelEdit = () => {
-    setEditingReviewId(null);
-    setReviewText('');
-    setRating(4.0);
-    setContainsSpoilers(false);
-  };
+  const sortedReviews = useMemo(() => {
+    const arr = [...reviews];
+    if (reviewSort === 'highest') return arr.sort((a, b) => b.rating - a.rating);
+    if (reviewSort === 'lowest') return arr.sort((a, b) => a.rating - b.rating);
+    return arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }, [reviews, reviewSort]);
 
   if (!movieId) return null;
 
@@ -585,25 +433,27 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const studios = movie?.production_companies || [];
 
   const streamProviders = watchProviders?.flatrate || watchProviders?.ads || [];
-  const rentBuyProviders = [
-    ...(watchProviders?.rent || []),
-    ...(watchProviders?.buy || [])
-  ];
+  const rentBuyProviders = [...(watchProviders?.rent || []), ...(watchProviders?.buy || [])];
   const uniqueRentBuy = Array.from(new Map(rentBuyProviders.map((p) => [p.provider_id, p])).values());
 
   const videos = movie?.videos?.results || [];
   const youtubeTrailers = videos.filter((v) => v.site === 'YouTube' && v.type === 'Trailer');
-  const trailer =
-    youtubeTrailers.find((v) => /\b(official trailer|main trailer)\b/i.test(v.name)) ||
-    youtubeTrailers.find((v) => !/\b(teaser|clip|spot|sneak|featurette|promo|announcement)\b/i.test(v.name)) ||
-    youtubeTrailers[0] ||
-    videos.find((v) => v.site === 'YouTube' && v.type === 'Teaser');
+  const trailer = youtubeTrailers[0] || videos.find((v) => v.site === 'YouTube' && v.type === 'Teaser');
 
   return (
     <div onClick={onClose} className={styles.backdrop}>
       <div ref={modalContentRef} onClick={(e) => e.stopPropagation()} className={styles.modal}>
-        {backdropSrc && (
+        
+        {/* Full Viewable Backdrop / Skeleton Backdrop */}
+        {loading || !movie ? (
+          <div className={`${styles.backdropImage} skeleton-box`} style={{ opacity: 0.15 }} />
+        ) : backdropSrc ? (
           <div className={styles.backdropImage} style={{ backgroundImage: `url(${backdropSrc})` }} />
+        ) : null}
+
+        {/* Global Vignette Gradient - Only render when loaded */}
+        {!loading && movie && (
+          <div className={styles.vignetteOverlay} />
         )}
 
         <div className={styles.topControls}>
@@ -613,7 +463,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
               <span>Link copied</span>
             </div>
           )}
-
           <button onClick={handleShare} title="Copy link" className={styles.controlBtn}>
             <Share2 size={15} />
           </button>
@@ -622,478 +471,390 @@ export default function MovieDetailModal({ movieId, onClose }) {
           </button>
         </div>
 
-        {loading ? (
-          <MovieDetailModalSkeleton />
-        ) : movie ? (
-          <div className={styles.contentWrapper}>
-            {/* Header Hero */}
+        <div className={styles.contentWrapper}>
+          {/* Smooth high-fidelity skeleton strictly locked to grid */}
+          {loading || !movie ? (
             <div className={styles.hero}>
-              <img src={posterSrc} alt={movie.title} className={styles.poster} />
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className={styles.titleArea}>
-                  <h1 className={styles.movieTitle}>{movie.title}</h1>
-                  <span className={styles.releaseYear}>{movie.release_date?.split('-')[0]}</span>
+              <div className={styles.leftCol}>
+                <div className={`skeleton-box ${styles.poster}`} style={{ aspectRatio: '2/3', border: 'none', boxShadow: 'none' }} />
+                <div className={styles.heroActions}>
+                  <div className="skeleton-box" style={{ height: '44px', width: '100%', borderRadius: '8px' }} />
+                  <div className="skeleton-box" style={{ height: '38px', width: '100%', borderRadius: '8px' }} />
                 </div>
+              </div>
 
-                {/* Director & Studios */}
-                <div className={styles.creditsRow}>
-                  {director && (
-                    <p className={styles.directorText}>
-                      Directed by{' '}
-                      <span
-                        onClick={() => {
-                          const dirObj = movie?.credits?.crew?.find((c) => c.job === 'Director');
-                          if (dirObj) setSelectedPersonId(dirObj.id);
-                        }}
-                        className={styles.directorLink}
-                      >
-                        {director}
-                      </span>
-                    </p>
-                  )}
-
-                  {studios.length > 0 && (
-                    <>
-                      {director && <span style={{ color: '#333333' }}>•</span>}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <Building2 size={14} color="#8a8a8a" />
-                        <span style={{ fontSize: '0.88rem', color: '#8a8a8a' }}>Studio:</span>
-                        {studios.slice(0, 3).map((comp, idx) => (
-                          <span
-                            key={comp.id}
-                            onClick={() => setSelectedCompanyId(comp.id)}
-                            className={styles.studioLink}
-                          >
-                            {comp.name}
-                            {idx < Math.min(studios.length, 3) - 1 ? ',' : ''}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  )}
+              <div className={styles.rightCol}>
+                <div className={styles.heroHeader}>
+                  <div className="skeleton-box" style={{ height: '48px', width: '70%', borderRadius: '8px', marginBottom: '8px' }} />
                 </div>
-
-                {/* Rating & Metadata Row with Community Score */}
-                <div className={styles.ratingsRow}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#ffffff', fontWeight: 800, fontSize: '1.05rem' }}>
-                      <Star size={16} fill="#ffffff" />
-                      {communityAverage ? `${communityAverage} / 5` : 'No ratings'}
-                    </span>
-                    <span style={{ fontSize: '0.78rem', color: '#8a8a8a', fontWeight: 500 }}>
-                      ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
-                    </span>
+                
+                <div className={styles.heroBody}>
+                  <div className="skeleton-box" style={{ height: '18px', width: '40%', borderRadius: '6px', marginBottom: '16px' }} />
+                  
+                  <div className={styles.genrePills}>
+                    {[1, 2, 3].map(i => <div key={i} className="skeleton-box" style={{ height: '26px', width: '65px', borderRadius: '6px' }} />)}
                   </div>
 
-                  <span style={{ color: '#333333' }}>•</span>
+                  <div className={styles.metadataVertical} style={{ marginTop: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div style={{ display: 'contents' }} key={i}>
+                        <div className="skeleton-box" style={{ height: '14px', width: '70px', borderRadius: '4px' }} />
+                        <div className="skeleton-box" style={{ height: '16px', width: '120px', borderRadius: '4px' }} />
+                      </div>
+                    ))}
+                  </div>
 
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#e5e5e5', fontWeight: 600, fontSize: '0.88rem' }}>
-                    TMDB: <strong style={{ color: '#ffffff' }}>{movie.vote_average ? movie.vote_average.toFixed(1) : '-'}</strong>/10
-                  </span>
-
-                  {movie.runtime > 0 && (
-                    <>
-                      <span style={{ color: '#333333' }}>•</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <Clock size={15} />
-                        {movie.runtime}m
-                      </span>
-                    </>
-                  )}
-
-                  <span style={{ color: '#333333' }}>•</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Calendar size={15} />
-                    {movie.release_date || 'N/A'}
-                  </span>
-                </div>
-
-                {/* Genre Pills */}
-                <div className={styles.genrePills}>
-                  {movie.genres?.map((g) => (
-                    <span key={g.id} className={styles.genrePill}>
-                      {g.name}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Actions */}
-                <div className={styles.actionsGroup}>
-                  <button
-                    onClick={toggleWatched}
-                    className={`${styles.actionBtn} ${isWatched ? styles.actionBtnActive : ''}`}
-                  >
-                    <Eye size={14} />
-                    <span>{isWatched ? 'Watched' : 'Mark Watched'}</span>
-                  </button>
-
-                  <button
-                    onClick={toggleWatchlist}
-                    className={`${styles.actionBtn} ${inWatchlist ? styles.actionBtnActive : ''}`}
-                  >
-                    <Bookmark size={14} fill={inWatchlist ? '#000000' : 'none'} />
-                    <span>{inWatchlist ? 'In Watchlist' : 'Watchlist'}</span>
-                  </button>
-
-                  <button
-                    onClick={toggleFavorite}
-                    disabled={savingFavorite}
-                    className={`${styles.actionBtn} ${isFavorited ? styles.actionBtnActive : ''}`}
-                    style={{ cursor: savingFavorite ? 'not-allowed' : 'pointer', opacity: savingFavorite ? 0.6 : 1 }}
-                  >
-                    <Heart size={14} fill={isFavorited ? '#000000' : 'none'} />
-                    <span>{isFavorited ? 'In Favorites' : 'Add to Favorites'}</span>
-                  </button>
-
-                  {trailer && (
-                    <button
-                      onClick={() => setIsPlayingTrailer(true)}
-                      className={styles.actionBtn}
-                    >
-                      <Play size={14} fill="currentColor" />
-                      <span>Watch Trailer</span>
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '1.5rem' }}>
+                    <div className="skeleton-box" style={{ height: '16px', width: '100%', borderRadius: '4px' }} />
+                    <div className="skeleton-box" style={{ height: '16px', width: '94%', borderRadius: '4px' }} />
+                    <div className="skeleton-box" style={{ height: '16px', width: '97%', borderRadius: '4px' }} />
+                    <div className="skeleton-box" style={{ height: '16px', width: '60%', borderRadius: '4px' }} />
+                  </div>
                 </div>
               </div>
             </div>
-
-            {movie.tagline && (
-              <p className={styles.tagline}>
-                "{movie.tagline}"
-              </p>
-            )}
-
-            <p className={styles.overview}>
-              {movie.overview || 'No description available.'}
-            </p>
-
-            {/* Watch Providers Section */}
-            {(streamProviders.length > 0 || uniqueRentBuy.length > 0) && (
-              <div className={styles.watchProvidersCard}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.1rem' }}>
-                  <Tv size={16} color="#ffffff" />
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.08em', color: '#ffffff', textTransform: 'uppercase' }}>
-                    Where to Watch
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap' }}>
-                  {streamProviders.length > 0 && (
-                    <div>
-                      <span style={{ display: 'block', fontSize: '0.75rem', color: '#8a8a8a', marginBottom: '0.55rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Stream
-                      </span>
-                      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        {streamProviders.map((prov) => (
-                          <div
-                            key={prov.provider_id}
-                            title={prov.provider_name}
-                            style={{ width: '40px', height: '40px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #282828', background: '#0a0a0a' }}
-                          >
-                            <img src={getImageUrl(prov.logo_path, 'w92')} alt={prov.provider_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {uniqueRentBuy.length > 0 && (
-                    <div>
-                      <span style={{ display: 'block', fontSize: '0.75rem', color: '#8a8a8a', marginBottom: '0.55rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Rent / Buy
-                      </span>
-                      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        {uniqueRentBuy.slice(0, 8).map((prov) => (
-                          <div
-                            key={prov.provider_id}
-                            title={prov.provider_name}
-                            style={{ width: '40px', height: '40px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #282828', background: '#0a0a0a' }}
-                          >
-                            <img src={getImageUrl(prov.logo_path, 'w92')} alt={prov.provider_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Cast Carousel */}
-            {topCast.length > 0 && (
-              <div style={{ marginTop: '3.5rem' }}>
-                <span className={styles.sectionHeading}>
-                  Top Cast
-                </span>
-                <div className={styles.carouselTrack}>
-                  {topCast.map((actor) => (
-                    <div
-                      key={actor.id}
-                      onClick={() => setSelectedPersonId(actor.id)}
-                      className={styles.castCard}
+          ) : (
+            <>
+              <div className={styles.hero}>
+                {/* Left/Top Column: Poster, Actions, and Watch Providers */}
+                <div className={styles.leftCol}>
+                  <img src={posterSrc} alt={movie.title} className={styles.poster} />
+                  
+                  <div className={styles.heroActions}>
+                    <button 
+                      onClick={() => {
+                        if (!user) return alert('Please sign in to log a film.');
+                        setIsReviewModalOpen(true);
+                      }} 
+                      className={styles.mainLogBtn}
                     >
-                      <div className={styles.castAvatarWrap}>
-                        {actor.profile_path ? (
-                          <img src={getImageUrl(actor.profile_path, 'w185')} alt={actor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#525252', fontSize: '0.9rem' }}>N/A</div>
+                      Rate, Log, Review...
+                    </button>
+                    
+                    {trailer && (
+                      <button onClick={() => setIsPlayingTrailer(true)} className={styles.trailerBtn}>
+                        <Play size={14} fill="currentColor" /> Watch Trailer
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Moved Watch Providers inside the left column so it matches button width natively */}
+                  {(streamProviders.length > 0 || uniqueRentBuy.length > 0) && (
+                    <div className={styles.watchProvidersCard}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.1rem' }}>
+                        <Tv size={16} color="#ffffff" />
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.08em', color: '#ffffff', textTransform: 'uppercase' }}>
+                          Where to Watch
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {streamProviders.length > 0 && (
+                          <div>
+                            <span style={{ display: 'block', fontSize: '0.75rem', color: '#8a8a8a', marginBottom: '0.55rem', fontWeight: 600, textTransform: 'uppercase' }}>Stream</span>
+                            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                              {streamProviders.map((prov) => (
+                                <a 
+                                  href={getProviderLink(prov.provider_name, movie.title)} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  key={prov.provider_id} 
+                                  title={prov.provider_name} 
+                                  className={styles.providerLogo}
+                                >
+                                  <img src={getImageUrl(prov.logo_path, 'w92')} alt={prov.provider_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {uniqueRentBuy.length > 0 && (
+                          <div>
+                            <span style={{ display: 'block', fontSize: '0.75rem', color: '#8a8a8a', marginBottom: '0.55rem', fontWeight: 600, textTransform: 'uppercase' }}>Rent / Buy</span>
+                            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                              {uniqueRentBuy.slice(0, 8).map((prov) => (
+                                <a 
+                                  href={getProviderLink(prov.provider_name, movie.title)} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  key={prov.provider_id} 
+                                  title={prov.provider_name} 
+                                  className={styles.providerLogo}
+                                >
+                                  <img src={getImageUrl(prov.logo_path, 'w92')} alt={prov.provider_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <p className={styles.castName}>{actor.name}</p>
-                      <p className={styles.castRole}>{actor.character}</p>
                     </div>
-                  ))}
+                  )}
+                </div>
+
+                {/* Right Column: Title, Metadata & Overview */}
+                <div className={styles.rightCol}>
+                  
+                  <div className={styles.heroHeader}>
+                    <h1 className={styles.movieTitle}>{movie.title}</h1>
+                    <p className={styles.releaseYearMobile}>{movie.release_date?.split('-')[0]}</p>
+                  </div>
+                  
+                  <div className={styles.heroBody}>
+                    {movie.tagline && (
+                      <p className={styles.tagline}>{movie.tagline}</p>
+                    )}
+
+                    <div className={styles.genrePills}>
+                      {movie.genres?.map((g) => (
+                        <span key={g.id} className={styles.genrePill}>{g.name}</span>
+                      ))}
+                    </div>
+
+                    <div className={styles.metadataVertical}>
+                      {director && (
+                        <>
+                          <span className={styles.metaLabel}>Directed By</span>
+                          <div className={styles.metaValue}>
+                            <span onClick={() => setSelectedPersonId(movie.credits.crew.find(c => c.job === 'Director')?.id)} className={styles.metaLink}>
+                              {director}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      
+                      {studios.length > 0 && (
+                        <>
+                          <span className={styles.metaLabel}>Studios</span>
+                          <div className={styles.metaValue}>
+                            {studios.slice(0, 3).map((comp, idx) => (
+                              <span key={comp.id} onClick={() => setSelectedCompanyId(comp.id)} className={styles.metaLink}>
+                                {comp.name}{idx < Math.min(studios.length, 3) - 1 ? ', ' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      <>
+                        <span className={styles.metaLabel}>Released</span>
+                        <div className={styles.metaValue}>{movie.release_date || 'N/A'}</div>
+                      </>
+
+                      {movie.runtime > 0 && (
+                        <>
+                          <span className={styles.metaLabel}>Runtime</span>
+                          <div className={styles.metaValue}>{movie.runtime} mins</div>
+                        </>
+                      )}
+
+                      <>
+                        <span className={styles.metaLabel}>TMDB</span>
+                        <div className={styles.metaValue}>
+                          <Star size={12} fill="currentColor" /> {movie.vote_average?.toFixed(1)} / 10
+                        </div>
+                      </>
+
+                      <>
+                        <span className={styles.metaLabel}>Community</span>
+                        <div className={styles.metaValue}>
+                          <Star size={12} fill="currentColor" /> {communityAverage || 'No ratings'}
+                        </div>
+                      </>
+                    </div>
+                    
+                    <p className={styles.overview}>{movie.overview || 'No description available.'}</p>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Recommended Films Carousel */}
-            {recommendations.length > 0 && (
-              <div style={{ marginTop: '3rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.1rem' }}>
-                  <Sparkles size={15} color="#ffffff" />
-                  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#888888', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                    Recommended Films
+              {/* Carousels */}
+              {topCast.length > 0 && (
+                <div style={{ marginTop: '3.5rem' }}>
+                  <span className={styles.sectionHeading}>Top Cast</span>
+                  <div className={styles.carouselTrack}>
+                    {topCast.map((actor) => (
+                      <div key={actor.id} onClick={() => setSelectedPersonId(actor.id)} className={styles.castCard}>
+                        <div className={styles.castAvatarWrap}>
+                          {actor.profile_path ? (
+                            <img src={getImageUrl(actor.profile_path, 'w185')} alt={actor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#525252', fontSize: '0.9rem' }}>N/A</div>
+                          )}
+                        </div>
+                        <p className={styles.castName}>{actor.name}</p>
+                        <p className={styles.castRole}>{actor.character}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {recommendations.length > 0 && (
+                <div style={{ marginTop: '3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.1rem' }}>
+                    <Sparkles size={15} color="#ffffff" />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#888888', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Recommended Films</span>
+                  </div>
+                  <div className={styles.recsTrack}>
+                    {recommendations.map((rec) => (
+                      <RecommendationMovieCard key={rec.id} film={rec} onSelect={handleSelectMovie} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <hr style={{ borderColor: '#1f1f1f', margin: '3.5rem 0' }} />
+
+              {/* Community Reviews with Sorting Dropdown */}
+              <div style={{ width: '100%', paddingBottom: '3rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                    Reviews ({reviews.length})
+                  </h3>
+                  
+                  <div className={styles.sortWrapper}>
+                    <span className={styles.sortLabel}>Sort by:</span>
+                    <div className={styles.selectContainer}>
+                      <select 
+                        value={reviewSort} 
+                        onChange={(e) => setReviewSort(e.target.value)}
+                        className={styles.sortSelect}
+                      >
+                        <option value="newest">Newest First</option>
+                        <option value="highest">Highest Rated</option>
+                        <option value="lowest">Lowest Rated</option>
+                      </select>
+                      <ChevronDown size={14} className={styles.selectIcon} />
+                    </div>
+                  </div>
+                </div>
+
+                {sortedReviews.length === 0 ? (
+                  <p style={{ color: '#737373', fontSize: '1.05rem' }}>No reviews yet. Be the first to review!</p>
+                ) : (
+                  <div className={styles.reviewsGrid}>
+                    {sortedReviews.map((rev) => (
+                      <div key={rev.id} id={`review-${rev.id}`}>
+                        <ReviewCard
+                          review={rev}
+                          onDelete={handleDeleteReview}
+                          onEdit={user?.id === rev.user_id ? handleEditReview : undefined}
+                          showMoviePoster={false}
+                          onCloseModal={onClose}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* --- Log/Review Sub-Modal --- */}
+        {isReviewModalOpen && (
+          <div className={styles.subModalBackdrop} onClick={() => {
+            setIsReviewModalOpen(false);
+            if(editingReviewId) {
+              setEditingReviewId(null);
+              setReviewText('');
+              setRating(4.0);
+            }
+          }}>
+            <div className={styles.subModal} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>I Watched...</h3>
+                <button onClick={() => setIsReviewModalOpen(false)} className={styles.subModalClose}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Toggles for logging interaction */}
+              <div className={styles.logTogglesRow}>
+                <button onClick={toggleWatched} className={`${styles.logToggleBtn} ${isWatched ? styles.activeEye : ''}`}>
+                  <Eye size={18} fill={isWatched ? 'currentColor' : 'none'} />
+                  <span>Watched</span>
+                </button>
+                <button onClick={toggleFavorite} className={`${styles.logToggleBtn} ${isFavorited ? styles.activeHeart : ''}`}>
+                  <Heart size={18} fill={isFavorited ? 'currentColor' : 'none'} />
+                  <span>Favorite</span>
+                </button>
+                <button onClick={toggleWatchlist} className={`${styles.logToggleBtn} ${inWatchlist ? styles.activeWatchlist : ''}`}>
+                  <Bookmark size={18} fill={inWatchlist ? 'currentColor' : 'none'} />
+                  <span>Watchlist</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <span style={{ fontSize: '0.9rem', color: '#a3a3a3', fontWeight: 600 }}>Rating</span>
+                  <StarRating rating={rating} onChange={(val) => setRating(val)} size={28} />
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>{rating.toFixed(1)}</span>
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <textarea
+                    rows={5}
+                    maxLength={1000}
+                    placeholder="Add a review..."
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    style={{
+                      width: '100%', background: '#111111', border: '1px solid #2a2a2a', borderRadius: '10px',
+                      padding: '16px', color: '#ffffff', fontSize: '1rem', lineHeight: '1.6', outline: 'none',
+                      resize: 'vertical', boxSizing: 'border-box'
+                    }}
+                  />
+                  <span style={{ position: 'absolute', bottom: '12px', right: '16px', fontSize: '0.75rem', fontWeight: 600, color: reviewText.length >= 950 ? '#ef4444' : '#666666' }}>
+                    {reviewText.length} / 1000
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '1.1rem', overflowX: 'auto', paddingBottom: '1rem' }}>
-                  {recommendations.map((rec) => (
-                    <RecommendationMovieCard
-                      key={rec.id}
-                      film={rec}
-                      onSelect={handleSelectMovie}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
 
-            <hr style={{ borderColor: '#1f1f1f', margin: '3.5rem 0' }} />
-
-            {/* Add Review Form */}
-            <div id="review-form" style={{ marginBottom: '4rem', width: '100%' }}>
-              <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
-                {editingReviewId ? 'Edit Review' : 'Add Review'}
-              </h3>
-
-              {user ? (
-                <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.35rem', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
-                    <StarRating rating={rating} onChange={(val) => setRating(val)} size={28} />
-                    <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff', minWidth: '50px' }}>
-                      {rating.toFixed(1)}
-                    </span>
-                  </div>
-
-                  <div style={{ position: 'relative', width: '100%' }}>
-                    <textarea
-                      rows={4}
-                      maxLength={1000}
-                      placeholder="Write your review..."
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      style={{
-                        width: '100%',
-                        background: '#111111',
-                        border: '1px solid #2a2a2a',
-                        borderRadius: '10px',
-                        padding: '16px 18px 26px 18px',
-                        color: '#ffffff',
-                        fontSize: '1.05rem',
-                        lineHeight: '1.6',
-                        outline: 'none',
-                        resize: 'vertical',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-
-                    <span
-                      style={{
-                        position: 'absolute',
-                        bottom: '10px',
-                        right: '16px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        color: reviewText.length >= 950 ? '#ef4444' : '#666666'
-                      }}
-                    >
-                      {reviewText.length} / 1000
-                    </span>
-                  </div>
-
-                  {/* Contains Spoilers Checkbox */}
-                  <label
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      fontSize: '0.88rem',
-                      color: containsSpoilers ? '#ffffff' : '#a3a3a3',
-                      userSelect: 'none',
-                      width: 'fit-content'
-                    }}
-                  >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', color: containsSpoilers ? '#ffffff' : '#a3a3a3' }}>
                     <input
                       type="checkbox"
                       checked={containsSpoilers}
                       onChange={(e) => setContainsSpoilers(e.target.checked)}
-                      style={{
-                        accentColor: '#ffffff',
-                        width: '16px',
-                        height: '16px',
-                        cursor: 'pointer'
-                      }}
+                      style={{ accentColor: '#ffffff', width: '16px', height: '16px', cursor: 'pointer' }}
                     />
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      {containsSpoilers && <AlertTriangle size={14} color="#eab308" />}
-                      Contains spoilers
+                      {containsSpoilers && <AlertTriangle size={14} color="#eab308" />} Contains spoilers
                     </span>
                   </label>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.65rem',
-                        padding: '10px 24px',
-                        background: '#ffffff',
-                        border: '1px solid #ffffff',
-                        borderRadius: '8px',
-                        color: '#000000',
-                        fontSize: '0.98rem',
-                        fontWeight: 700,
-                        cursor: submitting ? 'not-allowed' : 'pointer',
-                        opacity: submitting ? 0.6 : 1,
-                        transition: 'transform 0.1s ease'
-                      }}
-                    >
-                      <Send size={16} /> {submitting ? (editingReviewId ? 'Updating...' : 'Posting...') : (editingReviewId ? 'Update Review' : 'Post Review')}
-                    </button>
-
-                    {editingReviewId && (
-                      <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                        style={{
-                          padding: '10px 20px',
-                          background: 'transparent',
-                          border: '1px solid #2a2a2a',
-                          borderRadius: '8px',
-                          color: '#a3a3a3',
-                          fontSize: '0.98rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </form>
-              ) : (
-                <p style={{ color: '#737373', fontSize: '1.05rem' }}>Sign in to rate or review.</p>
-              )}
-            </div>
-
-            {/* 3-Column Reviews Grid */}
-            <div style={{ width: '100%' }}>
-              <h3 style={{ margin: '0 0 1.75rem 0', fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
-                Reviews ({reviews.length})
-              </h3>
-
-              {reviews.length === 0 ? (
-                <p style={{ color: '#737373', fontSize: '1.05rem' }}>No reviews yet.</p>
-              ) : (
-                <div className={styles.reviewsGrid}>
-                  {reviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      id={`review-${rev.id}`}
-                      style={{
-                        width: '100%',
-                        borderRadius: '14px',
-                        border: '1px solid transparent',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <ReviewCard
-                        review={rev}
-                        onDelete={handleDeleteReview}
-                        onEdit={user?.id === rev.user_id ? handleEditReview : undefined}
-                        showMoviePoster={false}
-                        onCloseModal={onClose}
-                      />
-                    </div>
-                  ))}
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={styles.submitReviewBtn}
+                  >
+                    <Send size={16} /> {submitting ? 'Saving...' : 'Save'}
+                  </button>
                 </div>
-              )}
+              </form>
             </div>
           </div>
-        ) : null}
+        )}
 
-        {/* Embedded Trailer Overlay */}
+        {/* Existing Overlays */}
         {isPlayingTrailer && trailer && (
-          <div
-            onClick={() => setIsPlayingTrailer(false)}
-            className={styles.trailerBackdrop}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className={styles.trailerBox}
-            >
-              <button
-                onClick={() => setIsPlayingTrailer(false)}
-                aria-label="Close trailer"
-                className={styles.trailerCloseBtn}
-              >
-                <X size={20} />
-              </button>
-
+          <div onClick={() => setIsPlayingTrailer(false)} className={styles.trailerBackdrop}>
+            <div onClick={(e) => e.stopPropagation()} className={styles.trailerBox}>
+              <button onClick={() => setIsPlayingTrailer(false)} className={styles.trailerCloseBtn}><X size={20} /></button>
               <iframe
                 src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0&modestbranding=1`}
-                title={`${movie.title} Trailer`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  display: 'block'
-                }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                title="Trailer"
+                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
                 allowFullScreen
               />
             </div>
           </div>
         )}
 
-        {/* Person Modal Overlay */}
-        {selectedPersonId && (
-          <PersonDetailModal
-            personId={selectedPersonId}
-            onClose={() => setSelectedPersonId(null)}
-            onSelectMovie={(newMovieId) => {
-              setSelectedPersonId(null);
-              handleSelectMovie(newMovieId);
-            }}
-          />
-        )}
-
-        {/* Studio / Production Company Modal Overlay */}
-        {selectedCompanyId && (
-          <CompanyDetailModal
-            companyId={selectedCompanyId}
-            onClose={() => setSelectedCompanyId(null)}
-            onSelectMovie={(newMovieId) => {
-              setSelectedCompanyId(null);
-              handleSelectMovie(newMovieId);
-            }}
-          />
-        )}
+        {selectedPersonId && <PersonDetailModal personId={selectedPersonId} onClose={() => setSelectedPersonId(null)} onSelectMovie={handleSelectMovie} />}
+        {selectedCompanyId && <CompanyDetailModal companyId={selectedCompanyId} onClose={() => setSelectedCompanyId(null)} onSelectMovie={handleSelectMovie} />}
       </div>
     </div>
   );

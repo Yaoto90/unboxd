@@ -66,7 +66,6 @@
   cursor: pointer;
 }
 
-/* UI Improvement: Lightened background & visible border for contrast */
 .searchInput {
   width: 100%;
   padding: 7px 32px 7px 12px;
@@ -124,7 +123,6 @@
   background: #121212;
 }
 
-/* UI Improvement: Added brightness increase on hover */
 .poster {
   width: 100%;
   height: 100%;
@@ -138,12 +136,10 @@
   filter: brightness(1.1);
 }
 
-/* UI Improvement: Card body spacing */
 .cardBody {
   padding: 1rem 1.2rem;
 }
 
-/* UI Improvement: Typographic hierarchy */
 .cardTitle {
   font-size: 0.9rem;
   margin: 0 0 0.5rem 0;
@@ -250,4 +246,68 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 1.25rem;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+  .appContainer {
+    padding-bottom: 80px; /* Space for the bottom navbar */
+  }
+
+  .homeContainer {
+    padding: 0.75rem 0.75rem 2rem 0.75rem;
+  }
+
+  /* Force trending tabs to scroll horizontally if they overflow */
+  .filterBar {
+    padding-bottom: 0.8rem;
+    margin-bottom: 1rem;
+    border-bottom: none;
+  }
+
+  .tabList {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .tabList::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide the search bar since mobile users use the bottom nav button */
+  .searchContainer {
+    display: none;
+  }
+
+  /* Exact Letterboxd 3-Column Mobile Grid */
+  .movieGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  /* Shrink typography and padding to fit 3 columns cleanly */
+  .cardBody {
+    padding: 0.5rem;
+  }
+
+  .cardTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .cardMeta {
+    font-size: 0.7rem;
+  }
+
+  .ratingBadge svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .reviewsGrid {
+    grid-template-columns: 1fr;
+  }
 }

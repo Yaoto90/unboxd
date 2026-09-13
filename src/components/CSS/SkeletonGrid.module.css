@@ -39,7 +39,39 @@
   border-radius: 3px;
 }
 
+/* Locked strictly to 6 columns on desktop */
 .grid {
   display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: 1.5rem;
+}
+
+/* Tablet intermediary */
+@media (max-width: 1100px) and (min-width: 769px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Mobile Responsiveness: Exactly 3 columns */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .body {
+    padding: 0.45rem;
+  }
+
+  .titleLine {
+    height: 11px;
+    margin-bottom: 0.35rem;
+  }
+
+  .metaPillYear,
+  .metaPillScore {
+    height: 9px;
+  }
 }

@@ -1,3 +1,13 @@
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .backdrop {
   position: fixed;
   inset: 0;
@@ -19,7 +29,6 @@
   border-radius: 18px;
   overflow-y: auto;
   border: 1px solid #222222;
-  color: #ffffff;
   position: relative;
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.98);
 }
@@ -29,15 +38,25 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 620px;
+  height: 65vh; 
   background-size: cover;
-  background-position: center top;
-  opacity: 0.52;
-  filter: brightness(1.15) contrast(1.05);
+  background-position: center 15%;
+  opacity: 1;
   pointer-events: none;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%);
   z-index: 0;
+}
+
+.vignetteOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 65vh;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 40%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .topControls {
@@ -62,11 +81,10 @@
   font-weight: 600;
   color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
 
-.controlBtn {
+.controlBtn, .closeBtn {
   width: 34px;
   height: 34px;
   background: rgba(255, 255, 255, 0.05);
@@ -81,127 +99,193 @@
   transition: all 0.15s ease;
 }
 
-.controlBtn:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.22);
+.controlBtn:hover, .closeBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.45);
   color: #ffffff;
-}
-
-.closeBtn {
-  width: 34px;
-  height: 34px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #d4d4d4;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  transition: all 0.15s ease;
-}
-
-.closeBtn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.45);
-  color: #ef4444;
 }
 
 .contentWrapper {
   position: relative;
-  z-index: 1;
-  padding: 3.5rem 4rem 4rem 4rem;
+  z-index: 2;
+  padding: 0 4rem 2rem 4rem;
+  margin-top: 35vh; 
 }
 
+/* --- Hero Layout Restructure --- */
 .hero {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: flex-start;
+  margin-bottom: 2.5rem;
+}
+
+.leftCol {
+  width: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .poster {
-  width: 230px;
+  width: 100%;
+  margin-top: -140px; 
   border-radius: 12px;
   border: 1px solid #282828;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
   display: block;
-  flex-shrink: 0;
 }
 
-.titleArea {
+.heroActions {
   display: flex;
-  align-items: baseline;
-  gap: 0.85rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rightCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+}
+
+.heroHeader {
+  display: flex;
+  flex-direction: column;
+}
+
+.releaseYearMobile {
+  display: none; /* Only show next to title on mobile */
+}
+
+/* --- Buttons --- */
+.mainLogBtn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05); 
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+}
+
+.mainLogBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mainLogBtn:active {
+  transform: scale(0.98);
+}
+
+.trailerBtn {
+  width: 100%;
+  padding: 10px;
+  background: #1a1a1a;
+  color: #d4d4d4;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.trailerBtn:hover {
+  background: #262626;
+  color: #ffffff;
+  border-color: #444444;
+}
+
+/* --- Typography --- */
+.heroBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 4px 20px rgba(0, 0, 0, 0.8);
 }
 
 .movieTitle {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  font-size: 3.2rem;
+  font-weight: 900;
   letter-spacing: -0.03em;
-  line-height: 1.15;
+  line-height: 1.1;
+  text-shadow: 0 4px 15px rgba(0,0,0,0.9);
 }
 
-.releaseYear {
-  font-size: 1.45rem;
-  color: #737373;
-  font-weight: 400;
+.tagline {
+  font-style: italic;
+  font-size: 1rem;
+  color: #d4d4d4;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.9);
 }
 
-.creditsRow {
+.metadataVertical {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  row-gap: 0.5rem;
+  column-gap: 1rem;
+  align-items: start;
+  margin: 1rem 0 1.5rem 0;
+}
+
+.metaLabel {
+  color: #a3a3a3;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+}
+
+.metaValue {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 5px;
   flex-wrap: wrap;
-  margin: 0.6rem 0 1.2rem 0;
+  color: #e5e5e5;
+  font-size: 0.92rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
 }
 
-.directorText {
-  margin: 0;
-  font-size: 0.98rem;
-  color: #a3a3a3;
-}
-
-.directorLink {
-  color: #ffffff;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.studioLink {
+.metaLink {
   color: #ffffff;
   font-weight: 600;
-  font-size: 0.88rem;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  transition: color 0.15s ease;
 }
 
-.ratingsRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.25rem;
-  color: #a3a3a3;
-  font-size: 0.92rem;
-  margin-bottom: 1.35rem;
+.metaLink:hover {
+  color: #40bcf4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .genrePills {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .genrePill {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #d4d4d4;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
   padding: 4px 11px;
   border-radius: 6px;
   font-size: 0.78rem;
@@ -209,70 +293,178 @@
   backdrop-filter: blur(8px);
 }
 
-.actionsGroup {
+.overview {
+  line-height: 1.75;
+  color: #f3f4f6;
+  font-size: 1.05rem;
+  margin: 0.5rem 0 0 0;
+  max-width: 900px;
+  font-weight: 500;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+/* Sub-Modal (Log / Review Modal) */
+.subModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.subModal {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 520px;
+  padding: 2rem;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.98);
+}
+
+.subModalClose {
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+
+.subModalClose:hover { color: #ffffff; }
+
+.logTogglesRow {
+  display: flex;
+  gap: 0.75rem;
+  background: #0a0a0a;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid #222;
+}
+
+.logToggleBtn {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  width: fit-content;
-  align-items: flex-start;
-}
-
-.actionBtn {
-  display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 6px 12px;
-  border-radius: 7px;
-  font-size: 0.82rem;
-  font-weight: 600;
+  gap: 6px;
+  padding: 12px 0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #737373;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.05);
-  color: #d4d4d4;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
-.actionBtn:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.22);
+.logToggleBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
 }
 
-.actionBtnActive {
+.activeEye { color: #00e054; background: rgba(0, 224, 84, 0.1); }
+.activeHeart { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+.activeWatchlist { color: #40bcf4; background: rgba(64, 188, 244, 0.1); }
+
+.submitReviewBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 10px 24px;
   background: #ffffff;
+  border: none;
+  border-radius: 8px;
   color: #000000;
-  border-color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.1s ease;
 }
 
-.actionBtnActive:hover {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
+.submitReviewBtn:hover { background: #e5e5e5; }
+.submitReviewBtn:active { transform: scale(0.97); }
+
+/* Review Sorting */
+.sortWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.tagline {
-  font-style: italic;
+.sortLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
   color: #8a8a8a;
-  font-size: 1.05rem;
-  margin-top: 2.5rem;
-  margin-bottom: 0.75rem;
+  text-transform: uppercase;
 }
 
-.overview {
-  line-height: 1.75;
-  color: #d4d4d4;
-  font-size: 1.05rem;
-  margin: 0.65rem 0 0 0;
-  max-width: 1200px;
+.selectContainer {
+  position: relative;
+  display: inline-block;
 }
 
-.watchProvidersCard {
-  margin-top: 3rem;
-  padding: 1.25rem 1.4rem;
+.sortSelect {
+  appearance: none;
   background: #111111;
+  border: 1px solid #333333;
+  color: #ffffff;
+  padding: 8px 32px 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.sortSelect:hover, .sortSelect:focus {
+  border-color: #555555;
+}
+
+.selectIcon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #a3a3a3;
+}
+
+/* Sections and Shared Utility */
+.watchProvidersCard {
+  padding: 1.25rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
-  border: 1px solid #222222;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
+  box-sizing: border-box;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.providerLogo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #282828;
+  background: #0a0a0a;
+  display: block;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.providerLogo:hover {
+  transform: scale(1.05);
+  border-color: #444444;
 }
 
 .sectionHeading {
@@ -285,7 +477,7 @@
   text-transform: uppercase;
 }
 
-.carouselTrack {
+.carouselTrack, .recsTrack {
   display: flex;
   gap: 1.75rem;
   overflow-x: auto;
@@ -381,4 +573,141 @@
 
 .trailerCloseBtn:hover {
   background: #222222;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+  .backdrop {
+    padding: 0;
+    align-items: flex-end; 
+  }
+
+  .modal {
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .backdropImage {
+    height: 56.25vw; 
+    background-position: top center;
+  }
+  
+  .vignetteOverlay {
+    height: 60vw;
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,0.8) 70%, #0a0a0a 100%);
+  }
+
+  .topControls {
+    position: sticky;
+    top: 0;
+    right: auto;
+    width: 100%;
+    padding: 1rem;
+    justify-content: flex-end;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+    box-sizing: border-box;
+  }
+
+  .contentWrapper {
+    padding: 0 1.25rem 3rem 1.25rem;
+    margin-top: 25vw; 
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1rem;
+    align-items: start;
+    margin-bottom: 1.5rem;
+  }
+
+  .leftCol, .rightCol {
+    display: contents; 
+  }
+
+  .poster {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: -60px; 
+  }
+
+  .heroHeader {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-bottom: 0.25rem;
+  }
+
+  .movieTitle {
+    font-size: 1.7rem;
+    line-height: 1.1;
+    margin-bottom: 0.2rem;
+  }
+
+  .releaseYearMobile {
+    display: block;
+    font-size: 0.95rem;
+    color: #a3a3a3;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .heroActions {
+    grid-column: 1 / span 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .heroBody {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tagline { order: 1; margin: 0 0 1rem 0; text-align: left; }
+  .genrePills { order: 2; justify-content: flex-start; margin-bottom: 1.25rem; }
+  .metadataVertical { 
+    order: 3; 
+    grid-template-columns: 85px 1fr; 
+    text-align: left; 
+    margin: 0 0 1.5rem 0; 
+    width: 100%; 
+  }
+  .overview { order: 4; text-align: left; }
+
+  .watchProvidersCard {
+    grid-column: 1 / span 2;
+    grid-row: 4;
+    width: 100%;
+    margin: 0;
+  }
+
+  .carouselTrack, .recsTrack {
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; 
+    -ms-overflow-style: none;  
+  }
+
+  .carouselTrack::-webkit-scrollbar, .recsTrack::-webkit-scrollbar {
+    display: none; 
+  }
+
+  .castCard, .recCard {
+    scroll-snap-align: start;
+  }
+
+  .reviewsGrid {
+    grid-template-columns: 1fr;
+  }
 }

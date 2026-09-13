@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { X, Search, Sparkles, Flame, Calendar, Film, Star, ChevronDown, Check, RotateCcw } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { X, Search, Sparkles, Flame, Calendar, Film, Star, ChevronDown, RotateCcw } from 'lucide-react';
 import styles from './CSS/SearchBrowseModal.module.css';
 
 const DECADES = [
@@ -54,6 +54,7 @@ function GlassButton({ children, onClick, active, style }) {
 }
 
 export default function SearchBrowseModal({ isOpen, onClose }) {
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [selectedEra, setSelectedEra] = useState({ type: null, value: null, label: null });
   const [selectedPopular, setSelectedPopular] = useState(null);
@@ -62,6 +63,57 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
   const [openDecadeId, setOpenDecadeId] = useState(null);
   const decadeContainerRef = useRef(null);
   const navigate = useNavigate();
+
+  // Background scroll lock logic
+  useEffect(() => {
+    if (isOpen) {
+      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+      document.body.dataset.modalLockCount = currentCount + 1;
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      if (isOpen) {
+        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+        const nextCount = Math.max(0, currentCount - 1);
+        document.body.dataset.modalLockCount = nextCount;
+        if (nextCount === 0) {
+          document.body.style.overflow = '';
+        }
+      }
+    };
+  }, [isOpen]);
+
+  // Sync state whenever modal opens to reflect current URL filters
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const urlType = searchParams.get('type');
+    const urlValue = searchParams.get('value');
+    const urlDecade = searchParams.get('decade');
+    const urlYear = searchParams.get('year');
+    const urlPopular = searchParams.get('popular');
+    const urlRating = searchParams.get('rating');
+    const urlGenres = searchParams.get('genres');
+
+    if (urlType === 'search') {
+      setQuery(urlValue || '');
+    } else {
+      setQuery('');
+    }
+
+    if (urlDecade) {
+      setSelectedEra({ type: 'decade', value: urlDecade, label: `${urlDecade}s Cinema` });
+    } else if (urlYear) {
+      setSelectedEra({ type: 'year', value: urlYear, label: `${urlYear} Cinema` });
+    } else {
+      setSelectedEra({ type: null, value: null, label: null });
+    }
+
+    setSelectedPopular(urlPopular || null);
+    setSelectedRating(urlRating || null);
+    setSelectedGenres(urlGenres ? urlGenres.split(',') : []);
+  }, [isOpen, searchParams]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -78,6 +130,7 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const handleClearFilters = () => {
+    setQuery('');
     setSelectedEra({ type: null, value: null, label: null });
     setSelectedPopular(null);
     setSelectedRating(null);
@@ -129,19 +182,17 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
     e.preventDefault();
     if (!query.trim()) return;
     const q = query.trim();
-    setQuery('');
     onClose();
     navigate(`/search?type=search&value=${encodeURIComponent(q)}&label=${encodeURIComponent(`Search: "${q}"`)}&page=1`);
   };
 
   const hasSelectedFilters = Boolean(
-    selectedEra.value || selectedPopular || selectedRating || selectedGenres.length > 0
+    query.trim() || selectedEra.value || selectedPopular || selectedRating || selectedGenres.length > 0
   );
 
   return (
     <div onClick={onClose} className={styles.backdrop}>
       <div onClick={(e) => e.stopPropagation()} className={styles.modal}>
-        {/* Header */}
         <div className={styles.header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sparkles size={16} color="#ffffff" />
@@ -153,7 +204,6 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Search Input Bar */}
         <form onSubmit={handleSearchSubmit} style={{ marginBottom: '1.75rem' }}>
           <div style={{ position: 'relative' }}>
             <input
@@ -332,7 +382,7 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
             onClick={handleApply}
             className={styles.applyBtn}
           >
-            <Check size={16} /> Apply Filters
+            <Search size={15} /> Search
           </button>
         </div>
       </div>

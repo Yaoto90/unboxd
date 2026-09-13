@@ -33,7 +33,6 @@ function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
           className={styles.poster}
         />
 
-        {/* Quick-Watchlist Button: Visible strictly on hover via CSS */}
         {onToggleWatchlist && (
           <button
             onClick={(e) => {
@@ -63,17 +62,15 @@ function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
   );
 }
 
-function HomeFeed({ onSelectMovie, onOpenAuth }) {
+function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
   const { user } = useAuth();
-  const [activeFeed, setActiveFeed] = useState('trending'); // 'trending' | 'top_rated' | 'now_playing' | 'upcoming'
+  const [activeFeed, setActiveFeed] = useState('trending');
   const [movies, setMovies] = useState([]);
   const [watchlistIds, setWatchlistIds] = useState(new Set());
   const [recentReviews, setRecentReviews] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fetch active watchlist for current user
   useEffect(() => {
     async function loadWatchlist() {
       if (!user) {
@@ -97,7 +94,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
     loadWatchlist();
   }, [user]);
 
-  // Fetch strictly 6 community reviews with avatar_url included
   useEffect(() => {
     async function loadCommunityReviews() {
       try {
@@ -114,7 +110,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
     loadCommunityReviews();
   }, []);
 
-  // Fetch feed titles whenever active tab changes
   useEffect(() => {
     const loadFeed = async () => {
       setLoading(true);
@@ -142,7 +137,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
     loadFeed();
   }, [activeFeed]);
 
-  // Toggle watchlist logic
   const handleToggleWatchlist = async (movie) => {
     if (!user) {
       if (onOpenAuth) onOpenAuth('signin');
@@ -152,7 +146,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
     const movieId = Number(movie.id);
     const isSaved = watchlistIds.has(movieId);
 
-    // Optimistic UI update
     setWatchlistIds((prev) => {
       const next = new Set(prev);
       if (isSaved) next.delete(movieId);
@@ -169,7 +162,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
           .eq('tmdb_movie_id', movieId)
           .or('type.eq.watchlist,type.is.null');
       } else {
-        // Adding to watchlist should clear any existing "watched" status for this movie
         await supabase
           .from('watchlists')
           .delete()
@@ -187,7 +179,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
       }
     } catch (err) {
       console.error('Error toggling watchlist:', err);
-      // Revert state if request fails
       setWatchlistIds((prev) => {
         const next = new Set(prev);
         if (isSaved) next.add(movieId);
@@ -206,9 +197,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
 
   return (
     <div className={styles.homeContainer}>
-      {/* Feed Filter Bar & Search */}
       <div className={styles.filterBar}>
-        {/* Switcher Tab Pills */}
         <div className={styles.tabList}>
           {feedTabs.map((tab) => {
             const Icon = tab.icon;
@@ -226,8 +215,8 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
           })}
         </div>
 
-        {/* Quick Search & Browse Trigger */}
-        <div onClick={() => setIsModalOpen(true)} className={styles.searchContainer}>
+        {/* This search input stays for desktop, hidden on mobile */}
+        <div onClick={onOpenSearch} className={styles.searchContainer}>
           <input
             type="text"
             readOnly
@@ -262,7 +251,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
         </div>
       )}
 
-      {/* Community Review Feed (Strictly 6 Cards in Grid) */}
       {!loading && recentReviews.length > 0 && (
         <div className={styles.reviewsSection}>
           <div className={styles.reviewsHeader}>
@@ -285,8 +273,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
           </div>
         </div>
       )}
-
-      <SearchBrowseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
@@ -294,6 +280,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth }) {
 function MainLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, initialMode: 'signin' });
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const selectedMovieId = searchParams.get('movie');
 
   const handleSelectMovie = (id, reviewId = null) => {
@@ -328,17 +315,17 @@ function MainLayout() {
 
   return (
     <div className={styles.appContainer}>
-      <Navbar onOpenAuth={handleOpenAuth} />
+      <Navbar onOpenAuth={handleOpenAuth} onOpenSearch={() => setIsSearchOpen(true)} />
       <Routes>
-        <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} onOpenAuth={handleOpenAuth} />} />
+        <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} onOpenAuth={handleOpenAuth} onOpenSearch={() => setIsSearchOpen(true)} />} />
         <Route path="/search" element={<SearchPage onSelectMovie={handleSelectMovie} />} />
         <Route path="/profile" element={<ProfilePage onSelectMovie={handleSelectMovie} />} />
         <Route path="/user/:username" element={<PublicProfilePage onSelectMovie={handleSelectMovie} />} />
       </Routes>
-      <MovieDetailModal
-        movieId={selectedMovieId}
-        onClose={handleCloseMovie}
-      />
+      
+      <MovieDetailModal movieId={selectedMovieId} onClose={handleCloseMovie} />
+      <SearchBrowseModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      
       {authModalConfig.isOpen && (
         <AuthModal
           isOpen={authModalConfig.isOpen}

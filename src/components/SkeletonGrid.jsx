@@ -15,14 +15,9 @@ export function MovieCardSkeleton() {
   );
 }
 
-export default function SkeletonGrid({ count = 18, minWidth = '185px' }) {
+export default function SkeletonGrid({ count = 18 }) {
   return (
-    <div
-      className={styles.grid}
-      style={{
-        gridTemplateColumns: `repeat(auto-fill, minmax(${minWidth}, 1fr))`
-      }}
-    >
+    <div className={styles.grid}>
       {Array.from({ length: count }).map((_, i) => (
         <MovieCardSkeleton key={i} />
       ))}

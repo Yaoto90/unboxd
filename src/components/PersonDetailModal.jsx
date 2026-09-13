@@ -73,6 +73,26 @@ export default function PersonDetailModal({ personId, onClose, onSelectMovie }) 
   const genreRef = useRef(null);
   const sortRef = useRef(null);
 
+  // Background scroll lock logic
+  useEffect(() => {
+    if (personId) {
+      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+      document.body.dataset.modalLockCount = currentCount + 1;
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      if (personId) {
+        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+        const nextCount = Math.max(0, currentCount - 1);
+        document.body.dataset.modalLockCount = nextCount;
+        if (nextCount === 0) {
+          document.body.style.overflow = '';
+        }
+      }
+    };
+  }, [personId]);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (yearRef.current && !yearRef.current.contains(e.target)) {

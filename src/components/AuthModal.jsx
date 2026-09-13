@@ -11,6 +11,26 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Background scroll lock logic
+  useEffect(() => {
+    if (isOpen) {
+      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+      document.body.dataset.modalLockCount = currentCount + 1;
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      if (isOpen) {
+        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+        const nextCount = Math.max(0, currentCount - 1);
+        document.body.dataset.modalLockCount = nextCount;
+        if (nextCount === 0) {
+          document.body.style.overflow = '';
+        }
+      }
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       setIsSignUp(initialMode === 'signup');

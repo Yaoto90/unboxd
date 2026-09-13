@@ -2,6 +2,7 @@
   max-width: 1440px;
   margin: 0 auto;
   padding: 2rem 1.5rem 6rem 1.5rem;
+  position: relative;
 }
 
 .headerBar {
@@ -49,9 +50,10 @@
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+/* Locked strictly to 6 columns on desktop */
 .movieGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 1.5rem;
 }
 
@@ -151,4 +153,69 @@
   border: 1px solid #1f1f1f;
   color: #404040;
   cursor: not-allowed;
+}
+
+/* Tablet intermediary */
+@media (max-width: 1100px) and (min-width: 769px) {
+  .movieGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 0.75rem calc(80px + env(safe-area-inset-bottom, 0)) 0.75rem;
+  }
+
+  .headerBar {
+    padding-bottom: 0.85rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid #19191d;
+  }
+
+  .pageTitle {
+    font-size: 1.05rem;
+    max-width: 90vw;
+  }
+
+  .filterTriggerBtn {
+    display: none;
+  }
+
+  /* Exactly 3 columns on phone */
+  .movieGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .cardBody {
+    padding: 0.45rem;
+  }
+
+  .cardTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .cardMeta {
+    font-size: 0.68rem;
+  }
+
+  .cardMeta svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .paginationRow {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .pageBtn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
 }

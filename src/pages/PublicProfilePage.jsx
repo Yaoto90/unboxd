@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl } from '../services/tmdb';
 import StarRating from '../components/StarRating';
-import { User, Bookmark, Star, ArrowLeft, ArrowUpDown, Eye, Shield } from 'lucide-react';
+import { User, Bookmark, Star, ArrowLeft, Eye, Shield, Lock } from 'lucide-react';
 import styles from './CSS/PublicProfilePage.module.css';
 
 export default function PublicProfilePage({ onSelectMovie }) {
@@ -28,7 +28,7 @@ export default function PublicProfilePage({ onSelectMovie }) {
       try {
         const { data: profileData, error: profileErr } = await supabase
           .from('profiles')
-          .select('id, username, avatar_url, role, bio, favorite_movies')
+          .select('id, username, avatar_url, role, bio, favorite_movies, is_private')
           .ilike('username', username)
           .maybeSingle();
 
@@ -43,6 +43,12 @@ export default function PublicProfilePage({ onSelectMovie }) {
         }
 
         setProfile(profileData);
+
+        // If the account is marked private, do not fetch their lists
+        if (profileData.is_private) {
+          setLoading(false);
+          return;
+        }
 
         const [reviewsRes, listsRes] = await Promise.all([
           supabase.from('reviews').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }),
@@ -124,7 +130,7 @@ export default function PublicProfilePage({ onSelectMovie }) {
       </button>
 
       <div className={styles.banner}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+        <div className={styles.userProfileGroup}>
           <div className={styles.avatarWrap}>
             {profile.avatar_url ? (
               <img src={profile.avatar_url} alt={profile.username} className={styles.avatarImg} />
@@ -133,79 +139,117 @@ export default function PublicProfilePage({ onSelectMovie }) {
             )}
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className={styles.userInfo}>
+            <div className={styles.nameBadgeRow}>
               <h1 className={styles.username}>{profile.username}</h1>
               {profile.role === 'admin' && (
                 <span className={styles.adminBadge}>
                   <Shield size={12} /> ADMIN
                 </span>
               )}
+              {profile.is_private && (
+                <span className={styles.privateBadge}>
+                  <Lock size={12} /> PRIVATE
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className={styles.statsRow}>
-          <div className={styles.statBox}><span className={styles.statVal}>{watched.length}</span><p className={styles.statLabel}>Watched</p></div>
-          <div className={styles.statBox}><span className={styles.statVal}>{watchlist.length}</span><p className={styles.statLabel}>Watchlist</p></div>
-          <div className={styles.statBox}><span className={styles.statVal}>{reviews.length}</span><p className={styles.statLabel}>Reviews</p></div>
-          <div className={styles.statBox}><span className={styles.statValHighlight}>{averageRating}</span><p className={styles.statLabel}>Avg Rating</p></div>
-        </div>
+        {!profile.is_private && (
+          <div className={styles.statsRow}>
+            <div className={styles.statBox}><span className={styles.statVal}>{watched.length}</span><p className={styles.statLabel}>Watched</p></div>
+            <div className={styles.statBox}><span className={styles.statVal}>{watchlist.length}</span><p className={styles.statLabel}>Watchlist</p></div>
+            <div className={styles.statBox}><span className={styles.statVal}>{reviews.length}</span><p className={styles.statLabel}>Reviews</p></div>
+            <div className={styles.statBox}><span className={styles.statValHighlight}>{averageRating}</span><p className={styles.statLabel}>Avg Rating</p></div>
+          </div>
+        )}
       </div>
 
-      {profile.bio && <p style={{ margin: '0 0 1.75rem 0', fontSize: '0.95rem', color: '#a3a3a3', lineHeight: 1.6, maxWidth: '640px' }}>{profile.bio}</p>}
+      {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
-      <div className={styles.tabsBar}>
-        <button onClick={() => setActiveTab('watched')} className={`${styles.tabBtn} ${activeTab === 'watched' ? styles.tabBtnActive : ''}`}>
-          <Eye size={18} /> Watched ({watched.length})
-        </button>
-        <button onClick={() => setActiveTab('watchlist')} className={`${styles.tabBtn} ${activeTab === 'watchlist' ? styles.tabBtnActive : ''}`}>
-          <Bookmark size={18} /> Watchlist ({watchlist.length})
-        </button>
-        <button onClick={() => setActiveTab('reviews')} className={`${styles.tabBtn} ${activeTab === 'reviews' ? styles.tabBtnActive : ''}`}>
-          <Star size={18} /> Reviews ({reviews.length})
-        </button>
-      </div>
-
-      {activeTab === 'watched' && (
-        <div className={styles.movieGrid}>
-          {watched.map((item) => (
-            <div key={item.id} onClick={() => onSelectMovie(item.tmdb_movie_id)} style={{ backgroundColor: '#0a0a0a', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: '1px solid #1e1e1e' }}>
-              <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }} />
-              <div style={{ padding: '0.85rem' }}><span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff', display: 'block' }}>{item.movie_title}</span></div>
-            </div>
-          ))}
+      {/* If the account is marked private, show the lock notice */}
+      {profile.is_private ? (
+        <div style={{ textAlign: 'center', padding: '4rem 1.5rem', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: '14px', margin: '2rem 0' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#141414', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', border: '1px solid #282828' }}>
+            <Lock size={20} color="#a3a3a3" />
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.5rem 0' }}>This Account is Private</h2>
+          <p style={{ color: '#737373', fontSize: '0.9rem', maxWidth: '380px', margin: '0 auto' }}>
+            {profile.username}&apos;s logs, reviews, and film activity are kept private.
+          </p>
         </div>
-      )}
-
-      {activeTab === 'watchlist' && (
-        <div className={styles.movieGrid}>
-          {watchlist.map((item) => (
-            <div key={item.id} onClick={() => onSelectMovie(item.tmdb_movie_id)} style={{ backgroundColor: '#0a0a0a', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: '1px solid #1e1e1e' }}>
-              <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }} />
-              <div style={{ padding: '0.85rem' }}><span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff', display: 'block' }}>{item.movie_title}</span></div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {activeTab === 'reviews' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '1.5rem' }}>
-          {sortedReviews.map((rev) => (
-            <div key={rev.id} onClick={() => onSelectMovie(rev.tmdb_movie_id)} style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '1.25rem', display: 'flex', gap: '1.25rem', cursor: 'pointer' }}>
-              <div style={{ width: '88px', flexShrink: 0, aspectRatio: '2/3', borderRadius: '6px', overflow: 'hidden', background: '#121212', border: '1px solid #222222' }}>
-                <img src={getImageUrl(rev.movie_poster_path, 'w185')} alt={rev.movie_title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <>
+          {Array.isArray(profile.favorite_movies) && profile.favorite_movies.length > 0 && (
+            <div className={styles.favoritesSection}>
+              <p className={styles.sectionHeaderSmall}>Favorite Films</p>
+              <div className={styles.favoritesGrid}>
+                {profile.favorite_movies.map((m) => (
+                  <div key={m.tmdb_movie_id} onClick={() => onSelectMovie(m.tmdb_movie_id)} className={styles.favCard}>
+                    <div className={styles.favPosterWrap}>
+                      <img src={getImageUrl(m.poster_path, 'w342')} alt={m.title} className={styles.favPoster} />
+                    </div>
+                    <p className={styles.favTitle}>{m.title}</p>
+                  </div>
+                ))}
               </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, justifyContent: 'space-between' }}>
-                <div>
-                  <h3 style={{ margin: '0 0 0.4rem 0', fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>{rev.movie_title}</h3>
-                  <StarRating rating={rev.rating || 0} interactive={false} size={16} />
-                  <p style={{ margin: '0.75rem 0 0 0', fontSize: '0.9rem', color: '#a3a3a3', lineHeight: '1.55' }}>{rev.review_text}</p>
+            </div>
+          )}
+
+          <div className={styles.tabsBar}>
+            <button onClick={() => setActiveTab('watched')} className={`${styles.tabBtn} ${activeTab === 'watched' ? styles.tabBtnActive : ''}`}>
+              <Eye size={17} /> Watched ({watched.length})
+            </button>
+            <button onClick={() => setActiveTab('watchlist')} className={`${styles.tabBtn} ${activeTab === 'watchlist' ? styles.tabBtnActive : ''}`}>
+              <Bookmark size={17} /> Watchlist ({watchlist.length})
+            </button>
+            <button onClick={() => setActiveTab('reviews')} className={`${styles.tabBtn} ${activeTab === 'reviews' ? styles.tabBtnActive : ''}`}>
+              <Star size={17} /> Reviews ({reviews.length})
+            </button>
+          </div>
+
+          {activeTab === 'watched' && (
+            <div className={styles.movieGrid}>
+              {watched.map((item) => (
+                <div key={item.id} onClick={() => onSelectMovie(item.tmdb_movie_id)} className={styles.card}>
+                  <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+                  <div className={styles.cardFooter}><span className={styles.cardTitle}>{item.movie_title}</span></div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+
+          {activeTab === 'watchlist' && (
+            <div className={styles.movieGrid}>
+              {watchlist.map((item) => (
+                <div key={item.id} onClick={() => onSelectMovie(item.tmdb_movie_id)} className={styles.card}>
+                  <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+                  <div className={styles.cardFooter}><span className={styles.cardTitle}>{item.movie_title}</span></div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'reviews' && (
+            <div className={styles.reviewsListGrid}>
+              {sortedReviews.map((rev) => (
+                <div key={rev.id} onClick={() => onSelectMovie(rev.tmdb_movie_id)} className={styles.reviewCard}>
+                  <div className={styles.reviewPosterWrap}>
+                    <img src={getImageUrl(rev.movie_poster_path, 'w185')} alt={rev.movie_title} className={styles.reviewPoster} />
+                  </div>
+                  <div className={styles.reviewBody}>
+                    <div>
+                      <h3 className={styles.reviewMovieTitle}>{rev.movie_title}</h3>
+                      <StarRating rating={rev.rating || 0} interactive={false} size={14} />
+                      <p className={styles.reviewText}>{rev.review_text}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

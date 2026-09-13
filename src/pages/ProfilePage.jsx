@@ -4,17 +4,21 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { getImageUrl, searchMovies } from '../services/tmdb';
 import StarRating from '../components/StarRating';
-import { User, Bookmark, Star, Trash2, Shield, ArrowLeft, Lock, KeyRound, ArrowUpDown, Eye, Camera, Loader2, X, Check, ZoomIn, ZoomOut, Edit3 } from 'lucide-react';
+import { 
+  User, Bookmark, Star, Trash2, Shield, ArrowLeft, Lock, KeyRound, 
+  Eye, Camera, Loader2, X, Check, ZoomIn, ZoomOut, Edit3, Globe, 
+  Plus, AlertTriangle, LogOut, Search
+} from 'lucide-react';
 import styles from './CSS/ProfilePage.module.css';
 
 function ProfileRecordsSkeleton() {
   return (
     <div className={styles.movieGrid}>
-      {Array.from({ length: 10 }).map((_, i) => (
+      {Array.from({ length: 18 }).map((_, i) => (
         <div key={i} className={styles.card}>
           <div className="skeleton-box" style={{ width: '100%', aspectRatio: '2/3' }} />
-          <div style={{ padding: '0.85rem' }}>
-            <div className="skeleton-box" style={{ height: '14px', width: '80%', borderRadius: '4px' }} />
+          <div className={styles.cardFooter}>
+            <div className="skeleton-box" style={{ height: '14px', width: '78%', borderRadius: '4px' }} />
           </div>
         </div>
       ))}
@@ -136,11 +140,11 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
   const { width: currentW, height: currentH } = getRenderDimensions(zoom);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.94)', backdropFilter: 'blur(12px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', userSelect: 'none' }}>
-      <div style={{ background: '#0d0d0d', border: '1px solid #242424', borderRadius: '16px', padding: '2rem', width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 30px 80px rgba(0, 0, 0, 0.98)' }}>
+    <div className={styles.modalBackdrop}>
+      <div className={styles.cropModalCard}>
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#ffffff' }}>Reposition Picture</h3>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', padding: '4px' }}>
+          <button onClick={onCancel} className={styles.iconBtn}>
             <X size={20} />
           </button>
         </div>
@@ -148,7 +152,7 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
         <div
           onPointerDown={handlePointerDown}
           onDragStart={(e) => e.preventDefault()}
-          style={{ width: `${boxSize}px`, height: `${boxSize}px`, borderRadius: '50%', overflow: 'hidden', position: 'relative', background: '#121212', border: '2px solid #22c55e', cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center', touchAction: 'none' }}
+          style={{ width: `${boxSize}px`, height: `${boxSize}px`, borderRadius: '50%', overflow: 'hidden', position: 'relative', background: '#121212', border: '2px solid rgba(255,255,255,0.4)', cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center', touchAction: 'none' }}
         >
           {imgElement && (
             <img
@@ -174,16 +178,16 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
             step="0.05"
             value={zoom}
             onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
-            style={{ flex: 1, accentColor: '#22c55e', cursor: 'pointer' }}
+            style={{ flex: 1, accentColor: '#ffffff', cursor: 'pointer' }}
           />
           <ZoomIn size={16} color="#737373" />
         </div>
 
         <div style={{ display: 'flex', gap: '0.9rem', width: '100%' }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#141414', border: '1px solid #262626', color: '#ffffff', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={onCancel} className={styles.secondaryGlassBtn}>
             Cancel
           </button>
-          <button onClick={handleSave} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#ffffff', border: 'none', color: '#000000', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <button onClick={handleSave} className={styles.primaryActionBtn} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Check size={16} /> Save Avatar
           </button>
         </div>
@@ -219,11 +223,11 @@ function EditReviewModal({ review, onClose, onUpdated }) {
   };
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(12px)', zIndex: 4100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #282828', borderRadius: '16px', padding: '2rem', width: '100%', maxWidth: '520px', boxShadow: '0 30px 80px rgba(0,0,0,0.95)', color: '#ffffff' }}>
+    <div onClick={onClose} className={styles.modalBackdrop}>
+      <div onClick={(e) => e.stopPropagation()} className={styles.editReviewModalCard}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Edit Review: {review.movie_title}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}>
+          <button onClick={onClose} className={styles.iconBtn}>
             <X size={20} />
           </button>
         </div>
@@ -238,14 +242,15 @@ function EditReviewModal({ review, onClose, onUpdated }) {
             rows={4}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            style={{ width: '100%', padding: '12px 14px', background: '#121212', border: '1px solid #262626', borderRadius: '8px', color: '#ffffff', fontSize: '0.95rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+            className={styles.formInput}
+            style={{ resize: 'vertical' }}
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem' }}>
-            <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: '#161616', border: '1px solid #262626', color: '#ffffff', borderRadius: '6px', cursor: 'pointer' }}>
+            <button type="button" onClick={onClose} className={styles.secondaryGlassBtn}>
               Cancel
             </button>
-            <button type="submit" disabled={saving} style={{ padding: '8px 18px', background: '#ffffff', border: 'none', color: '#000000', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}>
+            <button type="submit" disabled={saving} className={styles.primaryActionBtn}>
               {saving ? 'Saving...' : 'Update Review'}
             </button>
           </div>
@@ -257,7 +262,7 @@ function EditReviewModal({ review, onClose, onUpdated }) {
 
 export default function ProfilePage({ onSelectMovie }) {
   const navigate = useNavigate();
-  const { user, profile, refreshProfile, loading: authLoading } = useAuth();
+  const { user, profile, refreshProfile, loading: authLoading, signOut } = useAuth();
   const fileInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('watched');
   const [watchlist, setWatchlist] = useState([]);
@@ -272,25 +277,61 @@ export default function ProfilePage({ onSelectMovie }) {
 
   const [editingReview, setEditingReview] = useState(null);
 
+  // Settings form states
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState({ type: '', msg: '' });
+
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [privacyStatus, setPrivacyStatus] = useState({ type: '', msg: '' });
+
+  const [bioInput, setBioInput] = useState('');
+  const [savingBio, setSavingBio] = useState(false);
+  const [bioStatus, setBioStatus] = useState({ type: '', msg: '' });
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState({ type: '', msg: '' });
 
-  const [bioInput, setBioInput] = useState('');
-  const [savingBio, setSavingBio] = useState(false);
-  const [bioStatus, setBioStatus] = useState({ type: '', msg: '' });
-
+  // Favorite films management
   const [favoriteMovies, setFavoriteMovies] = useState([]);
   const [favSearchQuery, setFavSearchQuery] = useState('');
   const [favSearchResults, setFavSearchResults] = useState([]);
   const [favSearching, setFavSearching] = useState(false);
-  const [savingFavorites, setSavingFavorites] = useState(false);
-  const [favStatus, setFavStatus] = useState({ type: '', msg: '' });
+  
+  // Fav Films Modal state
+  const [editingFavIndex, setEditingFavIndex] = useState(null);
+
+  // Account deletion modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  // Background scroll lock for any open modal within ProfilePage
+  const isAnyModalOpen = Boolean(
+    cropImageSrc || editingReview || showDeleteModal || editingFavIndex !== null
+  );
+
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+      document.body.dataset.modalLockCount = currentCount + 1;
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      if (isAnyModalOpen) {
+        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
+        const nextCount = Math.max(0, currentCount - 1);
+        document.body.dataset.modalLockCount = nextCount;
+        if (nextCount === 0) {
+          document.body.style.overflow = '';
+        }
+      }
+    };
+  }, [isAnyModalOpen]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -301,6 +342,7 @@ export default function ProfilePage({ onSelectMovie }) {
 
     setUsernameInput(profile?.username || user.email?.split('@')[0] || '');
     setBioInput(profile?.bio || '');
+    setIsPrivate(Boolean(profile?.is_private));
     setFavoriteMovies(Array.isArray(profile?.favorite_movies) ? profile.favorite_movies : []);
 
     async function fetchUserData() {
@@ -485,6 +527,24 @@ export default function ProfilePage({ onSelectMovie }) {
     }
   };
 
+  const handleTogglePrivacy = async () => {
+    const nextState = !isPrivate;
+    setIsPrivate(nextState);
+    setSavingPrivacy(true);
+    setPrivacyStatus({ type: '', msg: '' });
+
+    try {
+      await supabase.from('profiles').update({ is_private: nextState }).eq('id', user.id);
+      await refreshProfile();
+      setPrivacyStatus({ type: 'success', msg: nextState ? 'Account is now Private.' : 'Account is now Public.' });
+    } catch (err) {
+      setIsPrivate(!nextState);
+      setPrivacyStatus({ type: 'error', msg: err.message || 'Failed to update privacy.' });
+    } finally {
+      setSavingPrivacy(false);
+    }
+  };
+
   const handleUpdateBio = async (e) => {
     e.preventDefault();
     setSavingBio(true);
@@ -501,7 +561,7 @@ export default function ProfilePage({ onSelectMovie }) {
     }
   };
 
-  const handleFavSearchChange = async (e) => {
+  const handleFavSearch = async (e) => {
     const q = e.target.value;
     setFavSearchQuery(q);
     if (!q.trim()) {
@@ -511,34 +571,60 @@ export default function ProfilePage({ onSelectMovie }) {
     setFavSearching(true);
     try {
       const data = await searchMovies(q.trim(), 1);
-      setFavSearchResults(Array.isArray(data?.results) ? data.results.slice(0, 6) : []);
+      setFavSearchResults(Array.isArray(data?.results) ? data.results.slice(0, 5) : []);
     } finally {
       setFavSearching(false);
     }
   };
 
-  const handleAddFavorite = (movie) => {
-    if (favoriteMovies.length >= 4 || favoriteMovies.some((m) => m.tmdb_movie_id === movie.id)) return;
-    setFavoriteMovies((prev) => [...prev, { tmdb_movie_id: movie.id, title: movie.title, poster_path: movie.poster_path }]);
+  const handleSelectFavFromMenu = async (movie) => {
+    const newFav = { 
+      tmdb_movie_id: movie.id, 
+      title: movie.title, 
+      poster_path: movie.poster_path,
+      release_date: movie.release_date || ''
+    };
+    let updated = [...favoriteMovies];
+
+    if (editingFavIndex !== null && editingFavIndex < updated.length) {
+      updated[editingFavIndex] = newFav;
+    } else {
+      if (!updated.some((m) => m.tmdb_movie_id === newFav.tmdb_movie_id) && updated.length < 4) {
+        updated.push(newFav);
+      }
+    }
+    
+    setFavoriteMovies(updated);
+    setEditingFavIndex(null);
     setFavSearchQuery('');
     setFavSearchResults([]);
-  };
 
-  const handleRemoveFavorite = (tmdbId) => {
-    setFavoriteMovies((prev) => prev.filter((m) => m.tmdb_movie_id !== tmdbId));
-  };
-
-  const handleSaveFavorites = async () => {
-    setSavingFavorites(true);
-    setFavStatus({ type: '', msg: '' });
     try {
-      await supabase.from('profiles').update({ favorite_movies: favoriteMovies }).eq('id', user.id);
+      await supabase.from('profiles').update({ favorite_movies: updated }).eq('id', user.id);
       await refreshProfile();
-      setFavStatus({ type: 'success', msg: 'Favorites updated!' });
     } catch (err) {
-      setFavStatus({ type: 'error', msg: err.message });
-    } finally {
-      setSavingFavorites(false);
+      console.error('Failed to auto-save favorite films:', err);
+    }
+  };
+
+  const handleRemoveFromMenu = async () => {
+    let updated = [...favoriteMovies];
+    
+    if (editingFavIndex !== null) {
+      const target = favoriteMovies[editingFavIndex];
+      if (target) {
+        updated = updated.filter((m) => m.tmdb_movie_id !== target.tmdb_movie_id);
+      }
+    }
+    
+    setFavoriteMovies(updated);
+    setEditingFavIndex(null);
+
+    try {
+      await supabase.from('profiles').update({ favorite_movies: updated }).eq('id', user.id);
+      await refreshProfile();
+    } catch (err) {
+      console.error('Failed to auto-save favorite films:', err);
     }
   };
 
@@ -557,6 +643,25 @@ export default function ProfilePage({ onSelectMovie }) {
       setPasswordStatus({ type: 'error', msg: error.message });
     }
     setSavingPassword(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText.trim() !== 'DELETE') return;
+    setDeletingAccount(true);
+
+    try {
+      await supabase.from('reviews').delete().eq('user_id', user.id);
+      await supabase.from('watchlists').delete().eq('user_id', user.id);
+      await supabase.from('profiles').delete().eq('id', user.id);
+
+      await signOut();
+      navigate('/');
+    } catch (err) {
+      alert(err.message || 'Failed to delete account. Please try again.');
+    } finally {
+      setDeletingAccount(false);
+      setShowDeleteModal(false);
+    }
   };
 
   const handleRemoveItem = async (e, item, type) => {
@@ -604,10 +709,130 @@ export default function ProfilePage({ onSelectMovie }) {
       {cropImageSrc && <AvatarCropModal imageSrc={cropImageSrc} onCropComplete={handleCropSave} onCancel={() => setCropImageSrc(null)} />}
       {editingReview && <EditReviewModal review={editingReview} onClose={() => setEditingReview(null)} onUpdated={(up) => setReviews((prev) => prev.map((r) => (r.id === up.id ? up : r)))} />}
 
+      {/* Account Deletion Confirmation Modal */}
+      {showDeleteModal && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.deleteModalCard}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ef4444', marginBottom: '1rem' }}>
+              <AlertTriangle size={24} />
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Delete Account</h3>
+            </div>
+            <p style={{ fontSize: '0.9rem', color: '#a3a3a3', lineHeight: '1.6', margin: '0 0 1.25rem 0' }}>
+              This action is <strong style={{ color: '#ffffff' }}>permanent and irreversible</strong>. All your logged films, reviews, ratings, and profile settings will be permanently removed.
+            </p>
+            <p style={{ fontSize: '0.85rem', color: '#737373', margin: '0 0 0.5rem 0' }}>
+              Type <strong style={{ color: '#ffffff' }}>DELETE</strong> below to confirm:
+            </p>
+            <input 
+              type="text" 
+              value={deleteConfirmText} 
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              className={styles.formInput}
+              style={{ marginBottom: '1.5rem' }}
+            />
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button 
+                type="button" 
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                className={styles.secondaryGlassBtn}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                disabled={deleteConfirmText.trim() !== 'DELETE' || deletingAccount}
+                onClick={handleDeleteAccount}
+                className={styles.dangerActionBtn}
+              >
+                {deletingAccount ? 'Deleting...' : 'Delete My Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Favorite Films Menu Modal */}
+      {editingFavIndex !== null && (
+        <div className={styles.modalBackdrop} onClick={() => setEditingFavIndex(null)}>
+          <div className={styles.editReviewModalCard} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>
+                {favoriteMovies[editingFavIndex] ? 'Edit Favorite Film' : 'Choose Favorite Film'}
+              </h3>
+              <button onClick={() => setEditingFavIndex(null)} className={styles.iconBtn}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {favoriteMovies[editingFavIndex] && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <span className={styles.microHeader}>Currently Pinned</span>
+                <div className={styles.favModalCurrent}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img 
+                      src={getImageUrl(favoriteMovies[editingFavIndex].poster_path, 'w92')} 
+                      alt="poster" 
+                      style={{ width: '44px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.95rem' }}>
+                        {favoriteMovies[editingFavIndex].title}
+                      </span>
+                      {favoriteMovies[editingFavIndex].release_date && (
+                        <span style={{ fontSize: '0.8rem', color: '#8a8a8a' }}>
+                          {favoriteMovies[editingFavIndex].release_date.split('-')[0]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button onClick={handleRemoveFromMenu} className={styles.favModalRemoveBtn}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <span className={styles.microHeader}>
+                {favoriteMovies[editingFavIndex] ? 'Replace With' : 'Search to Pin'}
+              </span>
+              <div className={styles.searchWrapper}>
+                <Search size={18} className={styles.searchIcon} />
+                <input 
+                  type="text" 
+                  placeholder="Search a movie title..."
+                  value={favSearchQuery}
+                  onChange={handleFavSearch}
+                  className={`${styles.formInput} ${styles.searchInputWithIcon}`}
+                  autoFocus
+                />
+              </div>
+              {favSearching && <p style={{ color: '#737373', fontSize: '0.85rem', marginTop: '1rem', textAlign: 'center' }}>Searching...</p>}
+              
+              {favSearchResults.length > 0 && (
+                <div className={styles.favModalResults}>
+                  {favSearchResults.map((film) => (
+                    <div key={film.id} onClick={() => handleSelectFavFromMenu(film)} className={styles.favDropdownItem}>
+                      <img src={getImageUrl(film.poster_path, 'w92')} alt={film.title} style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '4px' }} />
+                      <div>
+                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#ffffff' }}>{film.title}</p>
+                        <span style={{ fontSize: '0.8rem', color: '#8a8a8a' }}>{film.release_date?.split('-')[0] || 'N/A'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <button onClick={() => navigate('/')} className={styles.backBtn}>
         <ArrowLeft size={16} /> Back to films
       </button>
 
+      {/* Profile Top Banner */}
       <div className={styles.banner}>
         <div className={styles.userProfileGroup}>
           <div
@@ -627,16 +852,22 @@ export default function ProfilePage({ onSelectMovie }) {
             </div>
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div className={styles.userInfo}>
+            <div className={styles.nameBadgeRow}>
               <h1 className={styles.userName}>{profile?.username || user.email?.split('@')[0]}</h1>
               {profile?.role === 'admin' && (
                 <span className={styles.adminBadge}>
                   <Shield size={12} /> ADMIN
                 </span>
               )}
+              {profile?.is_private && (
+                <span className={styles.privateBadge}>
+                  <Lock size={12} /> PRIVATE
+                </span>
+              )}
             </div>
             <p className={styles.email}>{user.email}</p>
+            {profile?.bio && <p className={styles.bioInline}>{profile.bio}</p>}
           </div>
         </div>
 
@@ -644,28 +875,28 @@ export default function ProfilePage({ onSelectMovie }) {
           <div className={styles.statBox}><span className={styles.statVal}>{watched.length}</span><p className={styles.statLabel}>Watched</p></div>
           <div className={styles.statBox}><span className={styles.statVal}>{watchlist.length}</span><p className={styles.statLabel}>Watchlist</p></div>
           <div className={styles.statBox}><span className={styles.statVal}>{reviews.length}</span><p className={styles.statLabel}>Reviews</p></div>
-          <div className={styles.statBox}><span className={styles.statValHighlight}>{averageRating}</span><p className={styles.statLabel}>Avg Rating</p></div>
+          <div className={styles.statBox}><span className={styles.statVal}>{averageRating}</span><p className={styles.statLabel}>Avg Rating</p></div>
         </div>
       </div>
 
-      {profile?.bio && <p className={styles.bio}>{profile.bio}</p>}
-
-      {Array.isArray(profile?.favorite_movies) && profile.favorite_movies.length > 0 && (
-        <div style={{ marginBottom: '2.5rem' }}>
+      {/* Favorite Films Showcase (Hidden in settings tab) */}
+      {Array.isArray(profile?.favorite_movies) && profile.favorite_movies.length > 0 && activeTab !== 'profile' && (
+        <div className={styles.favoritesSection}>
           <p className={styles.sectionHeaderSmall}>Favorite Films</p>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div className={styles.favoritesGrid}>
             {profile.favorite_movies.map((m) => (
-              <div key={m.tmdb_movie_id} onClick={() => onSelectMovie(m.tmdb_movie_id)} style={{ width: '100px', flexShrink: 0, cursor: 'pointer' }}>
-                <div style={{ width: '100%', aspectRatio: '2/3', borderRadius: '8px', overflow: 'hidden', background: '#141414', border: '1px solid #222222' }}>
-                  <img src={getImageUrl(m.poster_path, 'w185')} alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div key={m.tmdb_movie_id} onClick={() => onSelectMovie(m.tmdb_movie_id)} className={styles.favCard}>
+                <div className={styles.favPosterWrap}>
+                  <img src={getImageUrl(m.poster_path, 'w342')} alt={m.title} className={styles.favPoster} />
                 </div>
-                <p style={{ margin: '6px 0 0 0', fontSize: '0.78rem', color: '#d4d4d4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</p>
+                <p className={styles.favTitle}>{m.title}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
+      {/* Tabs Bar with Frosted Monochrome Indicator */}
       <div className={styles.tabsBar}>
         <button onClick={() => setActiveTab('watched')} className={`${styles.tabBtn} ${activeTab === 'watched' ? styles.tabBtnActive : ''}`}>
           <Eye size={17} /> Watched ({watched.length})
@@ -687,10 +918,14 @@ export default function ProfilePage({ onSelectMovie }) {
         <div className={styles.movieGrid}>
           {watched.map((item) => (
             <div key={item.id || item.tmdb_movie_id} onClick={() => onSelectMovie(item.tmdb_movie_id)} className={styles.card}>
-              <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+              <div className={styles.posterWrap}>
+                <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+                <button onClick={(e) => handleRemoveItem(e, item, 'watched')} className={styles.removeBtn} title="Remove">
+                  <Trash2 size={14} color="#ffffff" />
+                </button>
+              </div>
               <div className={styles.cardFooter}>
                 <span className={styles.cardTitle}>{item.movie_title}</span>
-                <button onClick={(e) => handleRemoveItem(e, item, 'watched')} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Trash2 size={15} /></button>
               </div>
             </div>
           ))}
@@ -699,65 +934,214 @@ export default function ProfilePage({ onSelectMovie }) {
         <div className={styles.movieGrid}>
           {watchlist.map((item) => (
             <div key={item.id || item.tmdb_movie_id} onClick={() => onSelectMovie(item.tmdb_movie_id)} className={styles.card}>
-              <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+              <div className={styles.posterWrap}>
+                <img src={getImageUrl(item.movie_poster_path, 'w500')} alt={item.movie_title} className={styles.cardPoster} />
+                <button onClick={(e) => handleRemoveItem(e, item, 'watchlist')} className={styles.removeBtn} title="Remove">
+                  <Trash2 size={14} color="#ffffff" />
+                </button>
+              </div>
               <div className={styles.cardFooter}>
                 <span className={styles.cardTitle}>{item.movie_title}</span>
-                <button onClick={(e) => handleRemoveItem(e, item, 'watchlist')} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Trash2 size={15} /></button>
               </div>
             </div>
           ))}
         </div>
       ) : activeTab === 'reviewed' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.5rem' }}>
+        <div className={styles.reviewsListGrid}>
           {sortedReviews.map((rev) => (
-            <div key={rev.id} onClick={() => onSelectMovie(rev.tmdb_movie_id)} style={{ background: '#0d0d0d', border: '1px solid #222222', borderRadius: '12px', padding: '1.1rem 1.2rem', display: 'flex', gap: '1.1rem', cursor: 'pointer' }}>
-              <div style={{ width: '68px', flexShrink: 0, aspectRatio: '2/3', borderRadius: '6px', overflow: 'hidden', background: '#141414' }}>
-                <img src={getImageUrl(rev.movie_poster_path, 'w185')} alt={rev.movie_title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div key={rev.id} onClick={() => onSelectMovie(rev.tmdb_movie_id)} className={styles.reviewCard}>
+              <div className={styles.reviewPosterWrap}>
+                <img src={getImageUrl(rev.movie_poster_path, 'w185')} alt={rev.movie_title} className={styles.reviewPoster} />
               </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div className={styles.reviewBody}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700, color: '#ffffff' }}>{rev.movie_title}</h3>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button onClick={(e) => { e.stopPropagation(); setEditingReview(rev); }} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Edit3 size={14} /></button>
-                      <button onClick={(e) => handleDeleteReview(e, rev.id)} style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                  <div className={styles.reviewHeader}>
+                    <h3 className={styles.reviewMovieTitle}>{rev.movie_title}</h3>
+                    <div className={styles.reviewActions}>
+                      <button onClick={(e) => { e.stopPropagation(); setEditingReview(rev); }} className={styles.cardActionBtn} title="Edit"><Edit3 size={14} /></button>
+                      <button onClick={(e) => handleDeleteReview(e, rev.id)} className={styles.cardActionBtn} title="Delete"><Trash2 size={14} /></button>
                     </div>
                   </div>
-                  <StarRating rating={rev.rating || 0} interactive={false} size={15} />
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.86rem', color: '#d4d4d4', lineHeight: '1.5' }}>{rev.review_text}</p>
+                  <StarRating rating={rev.rating || 0} interactive={false} size={14} />
+                  <p className={styles.reviewText}>{rev.review_text}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className={styles.settingsGrid}>
-          <div className={styles.settingsBox}>
-            <div className={styles.settingsHeader}><User size={22} color="#ffffff" /><h3 style={{ margin: 0, fontSize: '1.15rem' }}>Display Name</h3></div>
-            <form onSubmit={handleUpdateUsername} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div><label className={styles.formLabel}>Display Name</label><input type="text" value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} className={styles.formInput} /></div>
-              {usernameStatus.msg && <p style={{ margin: 0, fontSize: '0.85rem', color: usernameStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>{usernameStatus.msg}</p>}
-              <button type="submit" disabled={savingUsername} className={styles.primaryActionBtn}>{savingUsername ? 'Saving...' : 'Update Name'}</button>
-            </form>
-          </div>
+        /* Settings Section - Redesigned Layout */
+        <div className={styles.settingsLayout}>
+          <div className={styles.settingsColumns}>
+            
+            {/* Left Column: Profile Elements (Favorites, Name, Bio) */}
+            <div className={styles.columnStack}>
+              
+              {/* Favorite 4 Films Selection */}
+              <div className={styles.settingsBox}>
+                <div className={styles.settingsHeader}>
+                  <Star size={18} color="#ffffff" />
+                  <h3 className={styles.settingsSectionTitle}>Favorite Films</h3>
+                </div>
+                <p className={styles.settingDesc}>These 4 films are featured at the top of your profile showcase.</p>
 
-          <div className={styles.settingsBox}>
-            <div className={styles.settingsHeader}><Edit3 size={22} color="#ffffff" /><h3 style={{ margin: 0, fontSize: '1.15rem' }}>Bio</h3></div>
-            <form onSubmit={handleUpdateBio} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div><label className={styles.formLabel}>About You</label><textarea rows={4} value={bioInput} onChange={(e) => setBioInput(e.target.value)} maxLength={280} className={styles.formInput} style={{ resize: 'vertical' }} /></div>
-              {bioStatus.msg && <p style={{ margin: 0, fontSize: '0.85rem', color: bioStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>{bioStatus.msg}</p>}
-              <button type="submit" disabled={savingBio} className={styles.primaryActionBtn}>{savingBio ? 'Saving...' : 'Update Bio'}</button>
-            </form>
-          </div>
+                <div className={styles.favSlotsRow}>
+                  {[0, 1, 2, 3].map((slotIdx) => {
+                    const fav = favoriteMovies[slotIdx];
+                    return (
+                      <div 
+                        key={slotIdx} 
+                        className={styles.favSlot}
+                        onClick={() => {
+                          setEditingFavIndex(slotIdx);
+                          setFavSearchQuery('');
+                          setFavSearchResults([]);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                        title={fav ? 'Edit favorite' : 'Add favorite'}
+                      >
+                        {fav ? (
+                          <div className={styles.favSlotFilled}>
+                            <img src={getImageUrl(fav.poster_path, 'w342')} alt={fav.title} className={styles.favSlotImg} />
+                            <span className={styles.favSlotLabel}>{fav.title}</span>
+                          </div>
+                        ) : (
+                          <div className={styles.favSlotEmpty}>
+                            <Plus size={18} color="#525252" />
+                            <span style={{ fontSize: '0.75rem', color: '#737373' }}>Empty</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-          <div className={styles.settingsBox}>
-            <div className={styles.settingsHeader}><Lock size={22} color="#ffffff" /><h3 style={{ margin: 0, fontSize: '1.15rem' }}>Password</h3></div>
-            <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div><label className={styles.formLabel}>New Password</label><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={styles.formInput} /></div>
-              <div><label className={styles.formLabel}>Confirm Password</label><input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={styles.formInput} /></div>
-              {passwordStatus.msg && <p style={{ margin: 0, fontSize: '0.85rem', color: passwordStatus.type === 'success' ? '#22c55e' : '#ef4444' }}>{passwordStatus.msg}</p>}
-              <button type="submit" disabled={savingPassword} className={styles.primaryActionBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><KeyRound size={16} />{savingPassword ? 'Updating...' : 'Update Password'}</button>
-            </form>
+              {/* Username */}
+              <div className={styles.settingsBox}>
+                <div className={styles.settingsHeader}>
+                  <User size={18} color="#ffffff" />
+                  <h3 className={styles.settingsSectionTitle}>Display Name</h3>
+                </div>
+                <form onSubmit={handleUpdateUsername} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label className={styles.formLabel}>Username</label>
+                    <input type="text" value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} className={styles.formInput} />
+                  </div>
+                  {usernameStatus.msg && <p style={{ margin: 0, fontSize: '0.82rem', color: usernameStatus.type === 'success' ? '#ffffff' : '#ef4444' }}>{usernameStatus.msg}</p>}
+                  <button type="submit" disabled={savingUsername} className={styles.primaryActionBtn}>{savingUsername ? 'Saving...' : 'Update Name'}</button>
+                </form>
+              </div>
+
+              {/* Bio */}
+              <div className={styles.settingsBox}>
+                <div className={styles.settingsHeader}>
+                  <Edit3 size={18} color="#ffffff" />
+                  <h3 className={styles.settingsSectionTitle}>Bio</h3>
+                </div>
+                <form onSubmit={handleUpdateBio} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label className={styles.formLabel}>About You</label>
+                    <textarea rows={3} value={bioInput} onChange={(e) => setBioInput(e.target.value)} maxLength={280} className={styles.formInput} style={{ resize: 'vertical' }} />
+                  </div>
+                  {bioStatus.msg && <p style={{ margin: 0, fontSize: '0.82rem', color: bioStatus.type === 'success' ? '#ffffff' : '#ef4444' }}>{bioStatus.msg}</p>}
+                  <button type="submit" disabled={savingBio} className={styles.primaryActionBtn}>{savingBio ? 'Saving...' : 'Update Bio'}</button>
+                </form>
+              </div>
+            </div>
+
+            {/* Right Column: Settings & Security (Privacy, Password, Session, Danger) */}
+            <div className={styles.columnStack}>
+              
+              {/* Account Privacy */}
+              <div className={styles.settingsBox}>
+                <div className={styles.settingsHeader}>
+                  {isPrivate ? <Lock size={18} color="#ffffff" /> : <Globe size={18} color="#ffffff" />}
+                  <h3 className={styles.settingsSectionTitle}>Account Privacy</h3>
+                </div>
+                <p className={styles.settingDesc}>
+                  {isPrivate 
+                    ? 'Your profile is Private. Visitors cannot see your logged films or reviews.' 
+                    : 'Your profile is Public. Anyone can view your watched films and ratings.'}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff' }}>Private Mode</span>
+                  <button 
+                    type="button" 
+                    onClick={handleTogglePrivacy} 
+                    disabled={savingPrivacy}
+                    className={`${styles.toggleSwitch} ${isPrivate ? styles.toggleSwitchActive : ''}`}
+                    aria-label="Toggle profile privacy"
+                  >
+                    <div className={styles.toggleThumb} />
+                  </button>
+                </div>
+                {privacyStatus.msg && (
+                  <p style={{ margin: '0.85rem 0 0 0', fontSize: '0.82rem', color: privacyStatus.type === 'success' ? '#ffffff' : '#ef4444' }}>
+                    {privacyStatus.msg}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className={styles.settingsBox}>
+                <div className={styles.settingsHeader}>
+                  <Lock size={18} color="#ffffff" />
+                  <h3 className={styles.settingsSectionTitle}>Change Password</h3>
+                </div>
+                <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label className={styles.formLabel}>New Password</label>
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={styles.formInput} />
+                  </div>
+                  <div>
+                    <label className={styles.formLabel}>Confirm Password</label>
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={styles.formInput} />
+                  </div>
+                  {passwordStatus.msg && <p style={{ margin: 0, fontSize: '0.82rem', color: passwordStatus.type === 'success' ? '#ffffff' : '#ef4444' }}>{passwordStatus.msg}</p>}
+                  <button type="submit" disabled={savingPassword} className={styles.primaryActionBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <KeyRound size={15} /> {savingPassword ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Session Management */}
+              <div className={styles.settingsBox}>
+                <div className={styles.settingsHeader}>
+                  <LogOut size={18} color="#ffffff" />
+                  <h3 className={styles.settingsSectionTitle}>Session</h3>
+                </div>
+                <p className={styles.settingDesc}>Safely log out of your current session on this device.</p>
+                <button 
+                  type="button"
+                  onClick={async () => {
+                    await signOut();
+                    navigate('/');
+                  }} 
+                  className={styles.secondaryGlassBtn}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <LogOut size={15} /> Sign Out
+                </button>
+              </div>
+
+              {/* Danger Zone: Delete Account */}
+              <div className={`${styles.settingsBox} ${styles.dangerBox}`}>
+                <div className={styles.settingsHeader}>
+                  <AlertTriangle size={18} color="#ef4444" />
+                  <h3 className={styles.settingsSectionTitle} style={{ color: '#ef4444' }}>Danger Zone</h3>
+                </div>
+                <p className={styles.settingDesc}>Permanently delete your account, ratings, reviews, and logs.</p>
+                <button 
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  className={styles.dangerActionBtn}
+                >
+                  Delete Account...
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
