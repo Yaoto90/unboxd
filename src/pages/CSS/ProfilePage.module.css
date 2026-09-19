@@ -1,14 +1,20 @@
 .container {
   max-width: 1340px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 6rem 1.5rem;
+  padding: 2.5rem 1.5rem 6rem;
+}
+
+.topNavRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
 }
 
 .backBtn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 2rem;
   background: none;
   border: none;
   color: #8a8a8a;
@@ -22,7 +28,27 @@
   color: #ffffff;
 }
 
-/* User Banner */
+.adminConsoleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.adminConsoleBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
 .banner {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -124,13 +150,13 @@
 }
 
 .email {
-  margin: 4px 0 0 0;
+  margin: 4px 0 0;
   font-size: 0.88rem;
   color: #737373;
 }
 
 .bioInline {
-  margin: 8px 0 0 0;
+  margin: 8px 0 0;
   font-size: 0.92rem;
   color: #a3a3a3;
   line-height: 1.5;
@@ -157,7 +183,7 @@
 }
 
 .statLabel {
-  margin: 4px 0 0 0;
+  margin: 4px 0 0;
   font-size: 0.78rem;
   color: #737373;
   font-weight: 600;
@@ -165,13 +191,12 @@
   letter-spacing: 0.04em;
 }
 
-/* Favorite Films Row */
 .favoritesSection {
   margin-bottom: 2.5rem;
 }
 
 .sectionHeaderSmall {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.75rem;
   font-size: 0.8rem;
   font-weight: 700;
   color: #737373;
@@ -222,7 +247,7 @@
 }
 
 .favTitle {
-  margin: 6px 0 0 0;
+  margin: 6px 0 0;
   font-size: 0.78rem;
   color: #d4d4d4;
   white-space: nowrap;
@@ -230,7 +255,6 @@
   text-overflow: ellipsis;
 }
 
-/* Tabs Bar */
 .tabsBar {
   display: flex;
   gap: 2.5rem;
@@ -260,20 +284,17 @@
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-/* Frosted monochrome active tab indicator */
 .tabBtnActive {
   color: #ffffff;
   border-bottom-color: #ffffff;
 }
 
-/* 6-Column Locked Movie Grid */
 .movieGrid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 1.5rem;
 }
 
-/* Parity with App.module.css interactions */
 .card {
   background-color: #0a0a0a;
   border-radius: 6px;
@@ -311,7 +332,6 @@
   filter: brightness(1.1);
 }
 
-/* Top Right Interactive Remove Overlay */
 .removeBtn {
   position: absolute;
   top: 8px;
@@ -452,13 +472,12 @@
 }
 
 .reviewText {
-  margin: 0.5rem 0 0 0;
+  margin: 0.5rem 0 0;
   font-size: 0.86rem;
   color: #d4d4d4;
   line-height: 1.5;
 }
 
-/* Redesigned Settings Dashboard */
 .settingsLayout {
   display: flex;
   flex-direction: column;
@@ -509,13 +528,12 @@
 }
 
 .settingDesc {
-  margin: 0 0 1.25rem 0;
+  margin: 0 0 1.25rem;
   font-size: 0.85rem;
   color: #737373;
   line-height: 1.5;
 }
 
-/* Monochrome Switch */
 .toggleSwitch {
   width: 46px;
   height: 24px;
@@ -548,7 +566,6 @@
   background-color: #000000;
 }
 
-/* 4-Slots Responsive Grid */
 .favSlotsRow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -595,7 +612,7 @@
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 600;
-  padding: 16px 8px 6px 8px;
+  padding: 16px 8px 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -611,7 +628,6 @@
   gap: 6px;
 }
 
-/* Favorite Films Enhanced Modal UI */
 .microHeader {
   font-size: 0.72rem;
   font-weight: 700;
@@ -643,7 +659,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .favModalRemoveBtn:hover {
@@ -697,7 +713,6 @@
   border-bottom: none;
 }
 
-/* Glass Inputs & Buttons */
 .formLabel {
   display: block;
   font-size: 0.82rem;
@@ -755,7 +770,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .secondaryGlassBtn:hover {
@@ -776,7 +791,7 @@
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .dangerActionBtn:hover {
@@ -801,7 +816,6 @@
   color: #ffffff;
 }
 
-/* Unified Profile Modals (Parity with MovieDetailModal) */
 .modalBackdrop {
   position: fixed;
   inset: 0;
@@ -815,41 +829,35 @@
   padding: 1.5rem;
 }
 
-.cropModalCard {
+.cropModalCard,
+.editReviewModalCard,
+.deleteModalCard {
   background: #0a0a0a;
-  border: 1px solid #222222;
   border-radius: 16px;
   padding: 2rem;
   width: 100%;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.98);
+}
+
+.cropModalCard {
+  border: 1px solid #222222;
   max-width: 420px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.98);
 }
 
 .editReviewModalCard {
-  background: #0a0a0a;
   border: 1px solid #222222;
-  border-radius: 16px;
-  padding: 2rem;
-  width: 100%;
   max-width: 520px;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.98);
   color: #ffffff;
 }
 
 .deleteModalCard {
-  background: #0a0a0a;
   border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: 16px;
-  padding: 2rem;
-  width: 100%;
   max-width: 460px;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.98);
 }
 
-/* Tablet intermediary */
 @media (max-width: 1100px) and (min-width: 769px) {
   .movieGrid {
     grid-template-columns: repeat(4, 1fr);
@@ -861,14 +869,16 @@
   }
 }
 
-/* Mobile Responsiveness */
 @media (max-width: 768px) {
   .container {
-    padding: 1.25rem 0.85rem calc(80px + env(safe-area-inset-bottom, 0)) 0.85rem;
+    padding: 1.25rem 0.85rem calc(80px + env(safe-area-inset-bottom, 0));
+  }
+
+  .topNavRow {
+    margin-bottom: 1.25rem;
   }
 
   .backBtn {
-    margin-bottom: 1.25rem;
     font-size: 0.82rem;
   }
 

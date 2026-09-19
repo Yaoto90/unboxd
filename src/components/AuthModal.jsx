@@ -11,23 +11,17 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Background scroll lock logic
   useEffect(() => {
-    if (isOpen) {
-      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-      document.body.dataset.modalLockCount = currentCount + 1;
-      document.body.style.overflow = 'hidden';
-    }
+    if (!isOpen) return;
+
+    const count = parseInt(document.body.dataset.modalLockCount || '0', 10);
+    document.body.dataset.modalLockCount = count + 1;
+    document.body.style.overflow = 'hidden';
 
     return () => {
-      if (isOpen) {
-        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-        const nextCount = Math.max(0, currentCount - 1);
-        document.body.dataset.modalLockCount = nextCount;
-        if (nextCount === 0) {
-          document.body.style.overflow = '';
-        }
-      }
+      const nextCount = Math.max(0, parseInt(document.body.dataset.modalLockCount || '0', 10) - 1);
+      document.body.dataset.modalLockCount = nextCount;
+      if (nextCount === 0) document.body.style.overflow = '';
     };
   }, [isOpen]);
 
@@ -51,10 +45,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
     try {
       if (isSignUp) {
         const cleanUsername = username.trim();
-
-        if (cleanUsername.length < 3) {
-          throw new Error('Username must be at least 3 characters.');
-        }
+        if (cleanUsername.length < 3) throw new Error('Username must be at least 3 characters.');
 
         const { data: existing, error: checkError } = await supabase
           .from('profiles')
@@ -63,29 +54,20 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
           .maybeSingle();
 
         if (checkError) throw checkError;
-
-        if (existing) {
-          throw new Error('This username is already taken. Please choose another.');
-        }
+        if (existing) throw new Error('This username is already taken. Please choose another.');
 
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { user_name: cleanUsername }
-          }
+          options: { data: { user_name: cleanUsername } }
         });
         if (error) throw error;
         alert('Account created! Check your email if confirmation is required.');
-        onClose();
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        onClose();
       }
+      onClose();
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -103,7 +85,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
               {isSignUp ? 'Create your account' : 'Sign in to your account'}
             </h2>
           </div>
-
           <button onClick={onClose} aria-label="Close" className={styles.closeBtn}>
             <X size={18} />
           </button>

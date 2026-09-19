@@ -1,10 +1,6 @@
 @keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .backdrop {
@@ -124,12 +120,7 @@
   color: #ffffff;
 }
 
-.glassBtnActive {
-  background: #ffffff;
-  border-color: #ffffff;
-  color: #000000;
-}
-
+.glassBtnActive,
 .glassBtnActive:hover {
   background: #ffffff;
   border-color: #ffffff;
@@ -227,7 +218,6 @@
   transform: scale(0.98);
 }
 
-/* Mobile full-screen bottom drawer */
 @media (max-width: 768px) {
   .backdrop {
     padding: 0;
@@ -240,7 +230,7 @@
     max-height: 100dvh;
     border-radius: 0;
     border: none;
-    padding: 1.25rem 1.25rem calc(80px + env(safe-area-inset-bottom, 0)) 1.25rem;
+    padding: 1.25rem 1.25rem calc(80px + env(safe-area-inset-bottom, 0));
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
@@ -261,8 +251,8 @@
     background: rgba(10, 10, 10, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    margin: 1.5rem -1.25rem -1.25rem -1.25rem;
-    padding: 0.85rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0)) 1.25rem;
+    margin: 1.5rem -1.25rem -1.25rem;
+    padding: 0.85rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0));
     z-index: 100;
   }
 

@@ -21,7 +21,6 @@ function MovieCard({ movie, onSelect }) {
 
       <div className={styles.cardBody}>
         <h3 className={styles.cardTitle}>{movie.title || 'Untitled'}</h3>
-
         <div className={styles.cardMeta}>
           <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff', fontWeight: 600 }}>

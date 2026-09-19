@@ -6,18 +6,9 @@ export default function StarRating({ rating = 0, onChange, interactive = true, s
   const [hoverVal, setHoverVal] = useState(null);
   const activeValue = hoverVal !== null ? hoverVal : rating;
 
-  const handleMouseMove = (e, starIndex) => {
-    if (!interactive) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const isLeftHalf = e.clientX - rect.left < rect.width / 2;
-    setHoverVal(isLeftHalf ? starIndex - 0.5 : starIndex);
-  };
-
-  const handleClick = (e, starIndex) => {
-    if (!interactive || !onChange) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const isLeftHalf = e.clientX - rect.left < rect.width / 2;
-    onChange(isLeftHalf ? starIndex - 0.5 : starIndex);
+  const getRatingValue = (e, starIndex) => {
+    const { left, width } = e.currentTarget.getBoundingClientRect();
+    return e.clientX - left < width / 2 ? starIndex - 0.5 : starIndex;
   };
 
   return (
@@ -31,8 +22,8 @@ export default function StarRating({ rating = 0, onChange, interactive = true, s
         return (
           <div
             key={starIndex}
-            onMouseMove={(e) => handleMouseMove(e, starIndex)}
-            onClick={(e) => handleClick(e, starIndex)}
+            onMouseMove={(e) => interactive && setHoverVal(getRatingValue(e, starIndex))}
+            onClick={(e) => interactive && onChange?.(getRatingValue(e, starIndex))}
             className={styles.starWrapper}
             style={{
               width: size,

@@ -52,14 +52,8 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
   const getRenderDimensions = (currentZoom) => {
     if (!imgElement) return { width: boxSize, height: boxSize };
     const aspect = imgElement.width / imgElement.height;
-    let baseW, baseH;
-    if (aspect >= 1) {
-      baseH = boxSize;
-      baseW = boxSize * aspect;
-    } else {
-      baseW = boxSize;
-      baseH = boxSize / aspect;
-    }
+    const baseW = aspect >= 1 ? boxSize * aspect : boxSize;
+    const baseH = aspect >= 1 ? boxSize : boxSize / aspect;
     return { width: baseW * currentZoom, height: baseH * currentZoom };
   };
 
@@ -84,9 +78,11 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
 
     const handlePointerMove = (moveEvent) => {
       if (!draggingRef.current) return;
-      const rawX = moveEvent.clientX - dragStartRef.current.x;
-      const rawY = moveEvent.clientY - dragStartRef.current.y;
-      setOffset(clampOffset(rawX, rawY, zoom));
+      setOffset(clampOffset(
+        moveEvent.clientX - dragStartRef.current.x,
+        moveEvent.clientY - dragStartRef.current.y,
+        zoom
+      ));
     };
 
     const handlePointerUp = () => {
@@ -121,20 +117,15 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
     const { width: renderW, height: renderH } = getRenderDimensions(zoom);
     const scaleFactor = outputSize / boxSize;
 
-    const drawX = (boxSize / 2 - renderW / 2 + offset.x) * scaleFactor;
-    const drawY = (boxSize / 2 - renderH / 2 + offset.y) * scaleFactor;
-    const drawW = renderW * scaleFactor;
-    const drawH = renderH * scaleFactor;
-
-    ctx.drawImage(imgElement, drawX, drawY, drawW, drawH);
-
-    canvas.toBlob(
-      (blob) => {
-        if (blob) onCropComplete(blob);
-      },
-      'image/webp',
-      0.85
+    ctx.drawImage(
+      imgElement,
+      (boxSize / 2 - renderW / 2 + offset.x) * scaleFactor,
+      (boxSize / 2 - renderH / 2 + offset.y) * scaleFactor,
+      renderW * scaleFactor,
+      renderH * scaleFactor
     );
+
+    canvas.toBlob((blob) => blob && onCropComplete(blob), 'image/webp', 0.85);
   };
 
   const { width: currentW, height: currentH } = getRenderDimensions(zoom);
@@ -184,9 +175,7 @@ function AvatarCropModal({ imageSrc, onCropComplete, onCancel }) {
         </div>
 
         <div style={{ display: 'flex', gap: '0.9rem', width: '100%' }}>
-          <button onClick={onCancel} className={styles.secondaryGlassBtn}>
-            Cancel
-          </button>
+          <button onClick={onCancel} className={styles.secondaryGlassBtn}>Cancel</button>
           <button onClick={handleSave} className={styles.primaryActionBtn} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Check size={16} /> Save Avatar
           </button>
@@ -247,9 +236,7 @@ function EditReviewModal({ review, onClose, onUpdated }) {
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem' }}>
-            <button type="button" onClick={onClose} className={styles.secondaryGlassBtn}>
-              Cancel
-            </button>
+            <button type="button" onClick={onClose} className={styles.secondaryGlassBtn}>Cancel</button>
             <button type="submit" disabled={saving} className={styles.primaryActionBtn}>
               {saving ? 'Saving...' : 'Update Review'}
             </button>
@@ -264,20 +251,19 @@ export default function ProfilePage({ onSelectMovie }) {
   const navigate = useNavigate();
   const { user, profile, refreshProfile, loading: authLoading, signOut } = useAuth();
   const fileInputRef = useRef(null);
+
   const [activeTab, setActiveTab] = useState('watched');
   const [watchlist, setWatchlist] = useState([]);
   const [watched, setWatched] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [reviewSort, setReviewSort] = useState('newest');
+  const [reviewSort] = useState('newest');
   const [loading, setLoading] = useState(true);
 
   const [cropImageSrc, setCropImageSrc] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarHover, setAvatarHover] = useState(false);
-
   const [editingReview, setEditingReview] = useState(null);
 
-  // Settings form states
   const [usernameInput, setUsernameInput] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState({ type: '', msg: '' });
@@ -295,40 +281,29 @@ export default function ProfilePage({ onSelectMovie }) {
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState({ type: '', msg: '' });
 
-  // Favorite films management
   const [favoriteMovies, setFavoriteMovies] = useState([]);
   const [favSearchQuery, setFavSearchQuery] = useState('');
   const [favSearchResults, setFavSearchResults] = useState([]);
   const [favSearching, setFavSearching] = useState(false);
-  
-  // Fav Films Modal state
   const [editingFavIndex, setEditingFavIndex] = useState(null);
 
-  // Account deletion modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
 
-  // Background scroll lock for any open modal within ProfilePage
-  const isAnyModalOpen = Boolean(
-    cropImageSrc || editingReview || showDeleteModal || editingFavIndex !== null
-  );
+  const isAnyModalOpen = Boolean(cropImageSrc || editingReview || showDeleteModal || editingFavIndex !== null);
 
   useEffect(() => {
     if (isAnyModalOpen) {
-      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-      document.body.dataset.modalLockCount = currentCount + 1;
+      const current = parseInt(document.body.dataset.modalLockCount || '0', 10);
+      document.body.dataset.modalLockCount = current + 1;
       document.body.style.overflow = 'hidden';
     }
-
     return () => {
       if (isAnyModalOpen) {
-        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-        const nextCount = Math.max(0, currentCount - 1);
-        document.body.dataset.modalLockCount = nextCount;
-        if (nextCount === 0) {
-          document.body.style.overflow = '';
-        }
+        const next = Math.max(0, parseInt(document.body.dataset.modalLockCount || '0', 10) - 1);
+        document.body.dataset.modalLockCount = next;
+        if (next === 0) document.body.style.overflow = '';
       }
     };
   }, [isAnyModalOpen]);
@@ -377,29 +352,26 @@ export default function ProfilePage({ onSelectMovie }) {
           }
         });
         const finalWatchedList = Array.from(watchedMap.values());
-
         const allWatchedIds = new Set(finalWatchedList.map((item) => Number(item.tmdb_movie_id)));
-        const cleanWatchlist = allLists.filter(
-          (item) => (item.type === 'watchlist' || !item.type) && !allWatchedIds.has(Number(item.tmdb_movie_id))
-        );
 
         setWatched(finalWatchedList);
-        setWatchlist(cleanWatchlist);
+        setWatchlist(allLists.filter((item) => (item.type === 'watchlist' || !item.type) && !allWatchedIds.has(Number(item.tmdb_movie_id))));
         setReviews(reviewsData);
 
         const missingFromDb = reviewsData.filter((rev) => !explicitWatchedIds.has(Number(rev.tmdb_movie_id)));
         if (missingFromDb.length > 0) {
-          const toInsert = missingFromDb.map((rev) => ({
-            user_id: user.id,
-            tmdb_movie_id: Number(rev.tmdb_movie_id),
-            movie_title: rev.movie_title,
-            movie_poster_path: rev.movie_poster_path,
-            type: 'watched'
-          }));
-          supabase.from('watchlists').insert(toInsert).then(() => {});
+          supabase.from('watchlists').insert(
+            missingFromDb.map((rev) => ({
+              user_id: user.id,
+              tmdb_movie_id: Number(rev.tmdb_movie_id),
+              movie_title: rev.movie_title,
+              movie_poster_path: rev.movie_poster_path,
+              type: 'watched'
+            }))
+          ).then(() => {});
         }
       } catch (err) {
-        console.error('Failed to load user records:', err);
+        // quiet fail
       } finally {
         setLoading(false);
       }
@@ -426,10 +398,7 @@ export default function ProfilePage({ onSelectMovie }) {
             .maybeSingle();
 
           if (movieData) {
-            setWatched((prev) => {
-              if (prev.some((w) => Number(w.tmdb_movie_id) === numericId)) return prev;
-              return [movieData, ...prev];
-            });
+            setWatched((prev) => (prev.some((w) => Number(w.tmdb_movie_id) === numericId) ? prev : [movieData, ...prev]));
           }
         } else {
           setWatched((prev) => prev.filter((w) => Number(w.tmdb_movie_id) !== numericId));
@@ -437,19 +406,10 @@ export default function ProfilePage({ onSelectMovie }) {
       }
 
       if (reviewDeleted) {
-        if (deletedReviewId) {
-          setReviews((prev) => prev.filter((r) => String(r.id) !== String(deletedReviewId)));
-        } else if (numericId) {
-          setReviews((prev) => prev.filter((r) => Number(r.tmdb_movie_id) !== numericId));
-        }
+        setReviews((prev) => prev.filter((r) => deletedReviewId ? String(r.id) !== String(deletedReviewId) : Number(r.tmdb_movie_id) !== numericId));
       } else if (numericId) {
-        const { data: latestReviews } = await supabase
-          .from('reviews')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (latestReviews) setReviews(latestReviews);
+        const { data } = await supabase.from('reviews').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+        if (data) setReviews(data);
       }
     };
 
@@ -471,7 +431,7 @@ export default function ProfilePage({ onSelectMovie }) {
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file?.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = () => setCropImageSrc(reader.result);
     reader.readAsDataURL(file);
@@ -481,21 +441,18 @@ export default function ProfilePage({ onSelectMovie }) {
   const handleCropSave = async (blob) => {
     setCropImageSrc(null);
     setUploadingAvatar(true);
-
     try {
       const filePath = `${user.id}/avatar_${Date.now()}.webp`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, blob, { contentType: 'image/webp', upsert: true });
-      if (uploadError) throw uploadError;
+      const { error: uploadErr } = await supabase.storage.from('avatars').upload(filePath, blob, { contentType: 'image/webp', upsert: true });
+      if (uploadErr) throw uploadErr;
 
-      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      const avatarUrl = publicUrlData.publicUrl;
-
-      const { error: profileError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id);
-      if (profileError) throw profileError;
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const { error: profErr } = await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', user.id);
+      if (profErr) throw profErr;
 
       await refreshProfile();
     } catch (err) {
-      console.error('Failed to update avatar:', err);
+      // quiet fail
     } finally {
       setUploadingAvatar(false);
     }
@@ -503,21 +460,19 @@ export default function ProfilePage({ onSelectMovie }) {
 
   const handleUpdateUsername = async (e) => {
     e.preventDefault();
-    const cleanUsername = usernameInput.trim();
-    if (!cleanUsername || cleanUsername.length < 3) return;
+    const clean = usernameInput.trim();
+    if (!clean || clean.length < 3) return;
 
     setSavingUsername(true);
     setUsernameStatus({ type: '', msg: '' });
-
     try {
-      const { data: existing } = await supabase.from('profiles').select('id').ilike('username', cleanUsername).neq('id', user.id).maybeSingle();
+      const { data: existing } = await supabase.from('profiles').select('id').ilike('username', clean).neq('id', user.id).maybeSingle();
       if (existing) {
         setUsernameStatus({ type: 'error', msg: 'This username is taken.' });
         setSavingUsername(false);
         return;
       }
-
-      await supabase.from('profiles').update({ username: cleanUsername }).eq('id', user.id);
+      await supabase.from('profiles').update({ username: clean }).eq('id', user.id);
       await refreshProfile();
       setUsernameStatus({ type: 'success', msg: 'Username updated!' });
     } catch (err) {
@@ -532,7 +487,6 @@ export default function ProfilePage({ onSelectMovie }) {
     setIsPrivate(nextState);
     setSavingPrivacy(true);
     setPrivacyStatus({ type: '', msg: '' });
-
     try {
       await supabase.from('profiles').update({ is_private: nextState }).eq('id', user.id);
       await refreshProfile();
@@ -549,7 +503,6 @@ export default function ProfilePage({ onSelectMovie }) {
     e.preventDefault();
     setSavingBio(true);
     setBioStatus({ type: '', msg: '' });
-
     try {
       await supabase.from('profiles').update({ bio: bioInput.trim() }).eq('id', user.id);
       await refreshProfile();
@@ -584,14 +537,12 @@ export default function ProfilePage({ onSelectMovie }) {
       poster_path: movie.poster_path,
       release_date: movie.release_date || ''
     };
-    let updated = [...favoriteMovies];
+    const updated = [...favoriteMovies];
 
     if (editingFavIndex !== null && editingFavIndex < updated.length) {
       updated[editingFavIndex] = newFav;
-    } else {
-      if (!updated.some((m) => m.tmdb_movie_id === newFav.tmdb_movie_id) && updated.length < 4) {
-        updated.push(newFav);
-      }
+    } else if (!updated.some((m) => m.tmdb_movie_id === newFav.tmdb_movie_id) && updated.length < 4) {
+      updated.push(newFav);
     }
     
     setFavoriteMovies(updated);
@@ -599,33 +550,20 @@ export default function ProfilePage({ onSelectMovie }) {
     setFavSearchQuery('');
     setFavSearchResults([]);
 
-    try {
-      await supabase.from('profiles').update({ favorite_movies: updated }).eq('id', user.id);
-      await refreshProfile();
-    } catch (err) {
-      console.error('Failed to auto-save favorite films:', err);
-    }
+    await supabase.from('profiles').update({ favorite_movies: updated }).eq('id', user.id);
+    await refreshProfile();
   };
 
   const handleRemoveFromMenu = async () => {
     let updated = [...favoriteMovies];
-    
-    if (editingFavIndex !== null) {
-      const target = favoriteMovies[editingFavIndex];
-      if (target) {
-        updated = updated.filter((m) => m.tmdb_movie_id !== target.tmdb_movie_id);
-      }
+    if (editingFavIndex !== null && favoriteMovies[editingFavIndex]) {
+      updated = updated.filter((m) => m.tmdb_movie_id !== favoriteMovies[editingFavIndex].tmdb_movie_id);
     }
-    
     setFavoriteMovies(updated);
     setEditingFavIndex(null);
 
-    try {
-      await supabase.from('profiles').update({ favorite_movies: updated }).eq('id', user.id);
-      await refreshProfile();
-    } catch (err) {
-      console.error('Failed to auto-save favorite films:', err);
-    }
+    await supabase.from('profiles').update({ favorite_movies: updated }).eq('id', user.id);
+    await refreshProfile();
   };
 
   const handleUpdatePassword = async (e) => {
@@ -635,12 +573,14 @@ export default function ProfilePage({ onSelectMovie }) {
     setPasswordStatus({ type: '', msg: '' });
 
     const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordStatus(
+      error 
+        ? { type: 'error', msg: error.message }
+        : { type: 'success', msg: 'Password updated successfully' }
+    );
     if (!error) {
-      setPasswordStatus({ type: 'success', msg: 'Password updated successfully' });
       setNewPassword('');
       setConfirmPassword('');
-    } else {
-      setPasswordStatus({ type: 'error', msg: error.message });
     }
     setSavingPassword(false);
   };
@@ -648,12 +588,10 @@ export default function ProfilePage({ onSelectMovie }) {
   const handleDeleteAccount = async () => {
     if (deleteConfirmText.trim() !== 'DELETE') return;
     setDeletingAccount(true);
-
     try {
       await supabase.from('reviews').delete().eq('user_id', user.id);
       await supabase.from('watchlists').delete().eq('user_id', user.id);
       await supabase.from('profiles').delete().eq('id', user.id);
-
       await signOut();
       navigate('/');
     } catch (err) {
@@ -709,7 +647,6 @@ export default function ProfilePage({ onSelectMovie }) {
       {cropImageSrc && <AvatarCropModal imageSrc={cropImageSrc} onCropComplete={handleCropSave} onCancel={() => setCropImageSrc(null)} />}
       {editingReview && <EditReviewModal review={editingReview} onClose={() => setEditingReview(null)} onUpdated={(up) => setReviews((prev) => prev.map((r) => (r.id === up.id ? up : r)))} />}
 
-      {/* Account Deletion Confirmation Modal */}
       {showDeleteModal && (
         <div className={styles.modalBackdrop}>
           <div className={styles.deleteModalCard}>
@@ -752,7 +689,6 @@ export default function ProfilePage({ onSelectMovie }) {
         </div>
       )}
 
-      {/* Enhanced Favorite Films Menu Modal */}
       {editingFavIndex !== null && (
         <div className={styles.modalBackdrop} onClick={() => setEditingFavIndex(null)}>
           <div className={styles.editReviewModalCard} onClick={(e) => e.stopPropagation()}>
@@ -828,11 +764,18 @@ export default function ProfilePage({ onSelectMovie }) {
         </div>
       )}
 
-      <button onClick={() => navigate('/')} className={styles.backBtn}>
-        <ArrowLeft size={16} /> Back to films
-      </button>
+      <div className={styles.topNavRow}>
+        <button onClick={() => navigate('/')} className={styles.backBtn}>
+          <ArrowLeft size={16} /> Back to films
+        </button>
 
-      {/* Profile Top Banner */}
+        {profile?.role === 'admin' && (
+          <button onClick={() => navigate('/admin')} className={styles.adminConsoleBtn}>
+            <Shield size={16} /> Admin Console
+          </button>
+        )}
+      </div>
+
       <div className={styles.banner}>
         <div className={styles.userProfileGroup}>
           <div
@@ -879,7 +822,6 @@ export default function ProfilePage({ onSelectMovie }) {
         </div>
       </div>
 
-      {/* Favorite Films Showcase (Hidden in settings tab) */}
       {Array.isArray(profile?.favorite_movies) && profile.favorite_movies.length > 0 && activeTab !== 'profile' && (
         <div className={styles.favoritesSection}>
           <p className={styles.sectionHeaderSmall}>Favorite Films</p>
@@ -896,7 +838,6 @@ export default function ProfilePage({ onSelectMovie }) {
         </div>
       )}
 
-      {/* Tabs Bar with Frosted Monochrome Indicator */}
       <div className={styles.tabsBar}>
         <button onClick={() => setActiveTab('watched')} className={`${styles.tabBtn} ${activeTab === 'watched' ? styles.tabBtnActive : ''}`}>
           <Eye size={17} /> Watched ({watched.length})
@@ -970,14 +911,9 @@ export default function ProfilePage({ onSelectMovie }) {
           ))}
         </div>
       ) : (
-        /* Settings Section - Redesigned Layout */
         <div className={styles.settingsLayout}>
           <div className={styles.settingsColumns}>
-            
-            {/* Left Column: Profile Elements (Favorites, Name, Bio) */}
             <div className={styles.columnStack}>
-              
-              {/* Favorite 4 Films Selection */}
               <div className={styles.settingsBox}>
                 <div className={styles.settingsHeader}>
                   <Star size={18} color="#ffffff" />
@@ -1017,7 +953,6 @@ export default function ProfilePage({ onSelectMovie }) {
                 </div>
               </div>
 
-              {/* Username */}
               <div className={styles.settingsBox}>
                 <div className={styles.settingsHeader}>
                   <User size={18} color="#ffffff" />
@@ -1033,7 +968,6 @@ export default function ProfilePage({ onSelectMovie }) {
                 </form>
               </div>
 
-              {/* Bio */}
               <div className={styles.settingsBox}>
                 <div className={styles.settingsHeader}>
                   <Edit3 size={18} color="#ffffff" />
@@ -1050,10 +984,7 @@ export default function ProfilePage({ onSelectMovie }) {
               </div>
             </div>
 
-            {/* Right Column: Settings & Security (Privacy, Password, Session, Danger) */}
             <div className={styles.columnStack}>
-              
-              {/* Account Privacy */}
               <div className={styles.settingsBox}>
                 <div className={styles.settingsHeader}>
                   {isPrivate ? <Lock size={18} color="#ffffff" /> : <Globe size={18} color="#ffffff" />}
@@ -1083,7 +1014,6 @@ export default function ProfilePage({ onSelectMovie }) {
                 )}
               </div>
 
-              {/* Password */}
               <div className={styles.settingsBox}>
                 <div className={styles.settingsHeader}>
                   <Lock size={18} color="#ffffff" />
@@ -1105,7 +1035,6 @@ export default function ProfilePage({ onSelectMovie }) {
                 </form>
               </div>
 
-              {/* Session Management */}
               <div className={styles.settingsBox}>
                 <div className={styles.settingsHeader}>
                   <LogOut size={18} color="#ffffff" />
@@ -1125,7 +1054,6 @@ export default function ProfilePage({ onSelectMovie }) {
                 </button>
               </div>
 
-              {/* Danger Zone: Delete Account */}
               <div className={`${styles.settingsBox} ${styles.dangerBox}`}>
                 <div className={styles.settingsHeader}>
                   <AlertTriangle size={18} color="#ef4444" />
@@ -1141,7 +1069,6 @@ export default function ProfilePage({ onSelectMovie }) {
                 </button>
               </div>
             </div>
-
           </div>
         </div>
       )}

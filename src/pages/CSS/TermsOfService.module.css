@@ -1,0 +1,77 @@
+.legalContainer {
+  max-width: 900px;
+  min-height: 60vh;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  color: #ffffff;
+}
+
+.heroSection {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.heroIcon {
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.4));
+}
+
+.title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.8rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #a3a3a3;
+  max-width: 580px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.glassCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.8rem;
+}
+
+.cardHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.glassCard p {
+  color: #a3a3a3;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .legalContainer {
+    padding: 2rem 1.25rem;
+  }
+  .title {
+    font-size: 2.2rem;
+  }
+}

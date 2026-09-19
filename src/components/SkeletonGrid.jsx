@@ -18,7 +18,7 @@ export function MovieCardSkeleton() {
 export default function SkeletonGrid({ count = 18 }) {
   return (
     <div className={styles.grid}>
-      {Array.from({ length: count }).map((_, i) => (
+      {Array.from({ length: count }, (_, i) => (
         <MovieCardSkeleton key={i} />
       ))}
     </div>

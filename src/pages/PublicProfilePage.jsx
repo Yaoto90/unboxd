@@ -17,7 +17,7 @@ export default function PublicProfilePage({ onSelectMovie }) {
   const [watchlist, setWatchlist] = useState([]);
   const [watched, setWatched] = useState([]);
   const [activeTab, setActiveTab] = useState('watched');
-  const [reviewSort, setReviewSort] = useState('newest');
+  const [reviewSort] = useState('newest');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -44,7 +44,6 @@ export default function PublicProfilePage({ onSelectMovie }) {
 
         setProfile(profileData);
 
-        // If the account is marked private, do not fetch their lists
         if (profileData.is_private) {
           setLoading(false);
           return;
@@ -82,7 +81,6 @@ export default function PublicProfilePage({ onSelectMovie }) {
         setWatchlist(cleanWatchlist);
         setReviews(reviewsData);
       } catch (err) {
-        console.error('Failed to load profile data:', err);
         setError('Failed to load profile');
       } finally {
         setLoading(false);
@@ -168,7 +166,6 @@ export default function PublicProfilePage({ onSelectMovie }) {
 
       {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
-      {/* If the account is marked private, show the lock notice */}
       {profile.is_private ? (
         <div style={{ textAlign: 'center', padding: '4rem 1.5rem', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: '14px', margin: '2rem 0' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#141414', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', border: '1px solid #282828' }}>

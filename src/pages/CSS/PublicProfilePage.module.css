@@ -1,7 +1,7 @@
 .container {
   max-width: 1340px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 6rem 1.5rem;
+  padding: 2.5rem 1.5rem 6rem;
 }
 
 .backBtn {
@@ -116,31 +116,31 @@
   min-width: 70px;
 }
 
-.statVal {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.1;
-  display: block;
-}
-
+.statVal,
 .statValHighlight {
   font-size: 1.8rem;
   font-weight: 800;
-  color: #22c55e;
   line-height: 1.1;
   display: block;
 }
 
+.statVal {
+  color: #ffffff;
+}
+
+.statValHighlight {
+  color: #22c55e;
+}
+
 .statLabel {
-  margin: 4px 0 0 0;
+  margin: 4px 0 0;
   font-size: 0.8rem;
   color: #737373;
   font-weight: 500;
 }
 
 .bio {
-  margin: 0 0 1.75rem 0;
+  margin: 0 0 1.75rem;
   font-size: 0.95rem;
   color: #a3a3a3;
   line-height: 1.6;
@@ -152,7 +152,7 @@
 }
 
 .sectionHeaderSmall {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.75rem;
   font-size: 0.8rem;
   font-weight: 700;
   color: #737373;
@@ -189,7 +189,7 @@
 }
 
 .favTitle {
-  margin: 6px 0 0 0;
+  margin: 6px 0 0;
   font-size: 0.78rem;
   color: #d4d4d4;
   white-space: nowrap;
@@ -231,7 +231,6 @@
   border-bottom-color: #ffffff;
 }
 
-/* 6 columns on desktop */
 .movieGrid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -313,7 +312,7 @@
 }
 
 .reviewMovieTitle {
-  margin: 0 0 0.35rem 0;
+  margin: 0 0 0.35rem;
   font-size: 0.98rem;
   font-weight: 700;
   color: #ffffff;
@@ -323,13 +322,12 @@
 }
 
 .reviewText {
-  margin: 0.5rem 0 0 0;
+  margin: 0.5rem 0 0;
   font-size: 0.86rem;
   color: #a3a3a3;
   line-height: 1.5;
 }
 
-/* Tablet */
 @media (max-width: 1100px) and (min-width: 769px) {
   .movieGrid {
     grid-template-columns: repeat(4, 1fr);
@@ -337,10 +335,9 @@
   }
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .container {
-    padding: 1.25rem 0.85rem calc(80px + env(safe-area-inset-bottom, 0)) 0.85rem;
+    padding: 1.25rem 0.85rem calc(80px + env(safe-area-inset-bottom, 0));
   }
 
   .backBtn {

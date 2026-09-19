@@ -14,24 +14,23 @@ import {
   Star,
   Bookmark,
   Send,
-  Clock,
-  Calendar,
   Share2,
   Check,
   Play,
   Eye,
   Heart,
   Tv,
-  Building2,
   Sparkles,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  CornerDownRight,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import PersonDetailModal from './PersonDetailModal';
 import CompanyDetailModal from './CompanyDetailModal';
 import styles from './CSS/MovieDetailModal.module.css';
 
-// Smart Router: Bypasses TMDB limits to generate direct streaming platform URLs
 const getProviderLink = (providerName, movieTitle) => {
   const title = encodeURIComponent(movieTitle);
   const name = providerName.toLowerCase();
@@ -117,20 +116,355 @@ function RecommendationMovieCard({ film, onSelect }) {
   );
 }
 
-export default function MovieDetailModal({ movieId, onClose }) {
+function ThreadReplyItem({ reply, onTargetReply, activeTargetId, depth = 0, currentUser, onToggleLike, onEdit, onDelete }) {
+  const isDeleted = reply.reply_text === '[deleted]';
+  const authorData = Array.isArray(reply.profiles) ? reply.profiles[0] : reply.profiles || {};
+  const username = isDeleted ? '[deleted]' : (authorData.username || 'user');
+  const avatar = isDeleted ? null : authorData.avatar_url;
+  const isTargeted = activeTargetId === reply.id;
+
+  const likes = reply.review_reply_likes || [];
+  const likeCount = likes.length;
+  const isLikedByMe = currentUser && likes.some(l => l.user_id === currentUser.id);
+  const isMine = currentUser && currentUser.id === reply.user_id;
+  const isEdited = Boolean(reply.updated_at) && !isDeleted;
+
+  return (
+    <div className={depth > 0 ? styles.threadReplyNested : styles.threadReplyRoot}>
+      <div className={`${styles.replyCard} ${isTargeted ? styles.replyCardTargeted : ''}`}>
+        <div className={`${styles.replyAvatar} ${isDeleted ? styles.replyAvatarDeleted : ''}`}>
+          {avatar ? <img src={avatar} alt={username} /> : <span>{isDeleted ? 'X' : username.charAt(0).toUpperCase()}</span>}
+        </div>
+        <div className={styles.replyContent}>
+          <div className={styles.replyTopBar}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className={isDeleted ? styles.replyDeletedText : styles.replyUsername}>{username}</span>
+              {isEdited && <span className={styles.editedBadge}>(edited)</span>}
+            </div>
+            
+            {isMine && !isDeleted && (
+              <div className={styles.replyActionsRight}>
+                <button onClick={() => onEdit(reply)} className={styles.replyActionBtn} title="Edit">
+                  <Pencil size={13} />
+                </button>
+                <button onClick={() => onDelete(reply.id)} className={`${styles.replyActionBtn} ${styles.replyActionBtnDelete}`} title="Delete">
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            )}
+          </div>
+          <p className={isDeleted ? styles.replyDeletedText : styles.replyText}>
+            {isDeleted ? '[This reply was deleted]' : reply.reply_text}
+          </p>
+          
+          {!isDeleted && (
+            <div className={styles.replyActionsRow}>
+              <button
+                type="button"
+                onClick={() => onToggleLike(reply.id, isLikedByMe)}
+                className={`${styles.replyInlineBtn} ${isLikedByMe ? styles.likedText : ''}`}
+              >
+                <Heart size={12} fill={isLikedByMe ? '#ef4444' : 'transparent'} color={isLikedByMe ? '#ef4444' : 'currentColor'} />
+                <span>{likeCount > 0 ? likeCount : 'Like'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onTargetReply(reply)}
+                className={styles.replyInlineBtn}
+              >
+                <CornerDownRight size={12} />
+                <span>Reply</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {reply.children && reply.children.length > 0 && (
+        <div className={styles.childRepliesContainer}>
+          {reply.children.map((child) => (
+            <ThreadReplyItem
+              key={child.id}
+              reply={child}
+              onTargetReply={onTargetReply}
+              activeTargetId={activeTargetId}
+              depth={depth + 1}
+              currentUser={currentUser}
+              onToggleLike={onToggleLike}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RepliesOverlay({ review, onClose }) {
+  const { user } = useAuth();
+  const [replies, setReplies] = useState([]);
+  const [newReply, setNewReply] = useState('');
+  const [replyTarget, setReplyTarget] = useState(null); 
+  const [editingReplyId, setEditingReplyId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchReplies() {
+      try {
+        const { data, error } = await supabase
+          .from('review_replies')
+          .select('*, profiles(username, avatar_url), review_reply_likes(user_id)')
+          .eq('review_id', review.id)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        if (isMounted) setReplies(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    fetchReplies();
+    return () => { isMounted = false; };
+  }, [review.id]);
+
+  const threadedReplies = useMemo(() => {
+    const map = new Map();
+    const roots = [];
+
+    replies.forEach((r) => {
+      map.set(r.id, { ...r, children: [] });
+    });
+
+    replies.forEach((r) => {
+      const node = map.get(r.id);
+      if (r.parent_reply_id && map.has(r.parent_reply_id)) {
+        map.get(r.parent_reply_id).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    return roots;
+  }, [replies]);
+
+  const handleSetReplyTarget = (target) => {
+    if (editingReplyId) {
+      setEditingReplyId(null);
+      setNewReply('');
+    }
+    setReplyTarget(target);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  const handleEditClick = (reply) => {
+    setReplyTarget(null);
+    setEditingReplyId(reply.id);
+    setNewReply(reply.reply_text);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  const handleDeleteClick = async (replyId) => {
+    if (!window.confirm('Are you sure you want to delete this reply?')) return;
+    try {
+      const hasChildren = replies.some(r => r.parent_reply_id === replyId);
+
+      if (hasChildren) {
+        const { data, error } = await supabase
+          .from('review_replies')
+          .update({ reply_text: '[deleted]' })
+          .eq('id', replyId)
+          .select('*, profiles(username, avatar_url), review_reply_likes(user_id)')
+          .single();
+
+        if (error) throw error;
+        setReplies(prev => prev.map(r => r.id === replyId ? data : r));
+      } else {
+        const { error } = await supabase.from('review_replies').delete().eq('id', replyId);
+        if (error) throw error;
+        setReplies(prev => prev.filter(r => r.id !== replyId));
+      }
+
+      if (editingReplyId === replyId) {
+        setEditingReplyId(null);
+        setNewReply('');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Error deleting reply');
+    }
+  };
+
+  const handleToggleLike = async (replyId, currentlyLiked) => {
+    if (!user) return alert('Please sign in to like replies.');
+
+    setReplies(current => current.map(r => {
+      if (r.id === replyId) {
+        const likes = r.review_reply_likes || [];
+        return {
+          ...r,
+          review_reply_likes: currentlyLiked
+            ? likes.filter(l => l.user_id !== user.id)
+            : [...likes, { user_id: user.id }]
+        };
+      }
+      return r;
+    }));
+
+    try {
+      if (currentlyLiked) {
+        await supabase.from('review_reply_likes').delete().eq('reply_id', replyId).eq('user_id', user.id);
+      } else {
+        await supabase.from('review_reply_likes').insert({ reply_id: replyId, user_id: user.id });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return alert('Please sign in to reply.');
+    if (!newReply.trim() || submitting) return;
+    
+    setSubmitting(true);
+    try {
+      if (editingReplyId) {
+        const { data, error } = await supabase
+          .from('review_replies')
+          .update({ reply_text: newReply, updated_at: new Date().toISOString() })
+          .eq('id', editingReplyId)
+          .select('*, profiles(username, avatar_url), review_reply_likes(user_id)')
+          .single();
+
+        if (error) throw error;
+        if (data) setReplies(prev => prev.map(r => r.id === editingReplyId ? data : r));
+        setEditingReplyId(null);
+      } else {
+        const payload = { 
+          review_id: review.id, 
+          user_id: user.id, 
+          reply_text: newReply,
+          parent_reply_id: replyTarget ? replyTarget.id : null
+        };
+
+        const { data, error } = await supabase
+          .from('review_replies')
+          .insert([payload])
+          .select('*, profiles(username, avatar_url), review_reply_likes(user_id)')
+          .single();
+
+        if (error) throw error;
+        if (data) setReplies(prev => [...prev, data]);
+      }
+      
+      setNewReply('');
+      setReplyTarget(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Error saving reply');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const reviewAuthor = review.profiles?.[0]?.username || review.profiles?.username || 'user';
+  const targetAuthor = replyTarget ? (replyTarget.profiles?.username || replyTarget.profiles?.[0]?.username || 'user') : null;
+
+  return (
+    <div className={styles.overlayBackdrop} onClick={onClose}>
+      <div className={styles.overlayContainer} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.header}>
+          <h3>Replies to {reviewAuthor}</h3>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close replies">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className={styles.replyFeed}>
+          {loading ? (
+            <p style={{ color: '#666', textAlign: 'center', marginTop: '2rem' }}>Loading thread...</p>
+          ) : threadedReplies.length === 0 ? (
+            <p style={{ color: '#666', textAlign: 'center', marginTop: '2rem' }}>No replies yet. Start the conversation!</p>
+          ) : (
+            threadedReplies.map((rootReply) => (
+              <ThreadReplyItem
+                key={rootReply.id}
+                reply={rootReply}
+                onTargetReply={handleSetReplyTarget}
+                activeTargetId={replyTarget?.id}
+                depth={0}
+                currentUser={user}
+                onToggleLike={handleToggleLike}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+              />
+            ))
+          )}
+        </div>
+
+        {replyTarget && !editingReplyId && (
+          <div className={styles.replyTargetNotice}>
+            <span>Replying to <strong>@{targetAuthor}</strong></span>
+            <button type="button" onClick={() => setReplyTarget(null)} className={styles.cancelTargetBtn}>
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
+        {editingReplyId && (
+          <div className={styles.replyTargetNotice}>
+            <span>Editing your reply...</span>
+            <button type="button" onClick={() => { setEditingReplyId(null); setNewReply(''); }} className={styles.cancelTargetBtn}>
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
+        <form className={styles.inputArea} onSubmit={handleSubmit}>
+          <input 
+            ref={inputRef}
+            type="text" 
+            placeholder={
+              !user 
+                ? 'Sign in to reply' 
+                : editingReplyId
+                ? 'Update your reply...'
+                : replyTarget 
+                ? `Replying to @${targetAuthor}...` 
+                : 'Write a reply...'
+            } 
+            value={newReply}
+            onChange={(e) => setNewReply(e.target.value)}
+            disabled={!user || submitting}
+          />
+          <button type="submit" disabled={!user || !newReply.trim() || submitting} className={styles.sendButton}>
+            <Send size={18} />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default function MovieDetailModal({ movieId, onClose, stackLevel = 0 }) {
   const { user, profile, refreshProfile } = useAuth();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // UI State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [nestedMovieId, setNestedMovieId] = useState(null);
   const [reviewSort, setReviewSort] = useState('newest'); 
 
-  // Interaction State
   const [rating, setRating] = useState(4.0);
   const [reviewText, setReviewText] = useState('');
   const [containsSpoilers, setContainsSpoilers] = useState(false);
@@ -138,9 +472,9 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const [inWatchlist, setInWatchlist] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
-  const [savingFavorite, setSavingFavorite] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [editingReviewId, setEditingReviewId] = useState(null);
+  const [activeReplyReview, setActiveReplyReview] = useState(null);
 
   const [watchProviders, setWatchProviders] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
@@ -148,23 +482,16 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const modalContentRef = useRef(null);
   const numericMovieId = Number(movieId);
 
-  // Background scroll lock logic
   useEffect(() => {
-    if (numericMovieId) {
-      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-      document.body.dataset.modalLockCount = currentCount + 1;
-      document.body.style.overflow = 'hidden';
-    }
+    if (!numericMovieId) return;
+    const count = parseInt(document.body.dataset.modalLockCount || '0', 10);
+    document.body.dataset.modalLockCount = count + 1;
+    document.body.style.overflow = 'hidden';
     
     return () => {
-      if (numericMovieId) {
-        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-        const nextCount = Math.max(0, currentCount - 1);
-        document.body.dataset.modalLockCount = nextCount;
-        if (nextCount === 0) {
-          document.body.style.overflow = '';
-        }
-      }
+      const nextCount = Math.max(0, parseInt(document.body.dataset.modalLockCount || '0', 10) - 1);
+      document.body.dataset.modalLockCount = nextCount;
+      if (nextCount === 0) document.body.style.overflow = '';
     };
   }, [numericMovieId]);
 
@@ -191,7 +518,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
           getMovieRecommendations(numericMovieId),
           supabase
             .from('reviews')
-            .select('*, profiles(username, avatar_url), review_likes(user_id)')
+            .select('*, profiles(username, avatar_url), review_likes(user_id), review_replies(count)')
             .eq('tmdb_movie_id', numericMovieId)
             .order('created_at', { ascending: false }),
           user
@@ -229,7 +556,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
           setInWatchlist(!watchedStatus && Boolean(hasWatchlistRow));
         }
       } catch (err) {
-        console.error('Failed to load movie details:', err);
+        console.error(err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -246,6 +573,41 @@ export default function MovieDetailModal({ movieId, onClose }) {
     const favs = Array.isArray(profile?.favorite_movies) ? profile.favorite_movies : [];
     setIsFavorited(favs.some((m) => m.tmdb_movie_id === numericMovieId));
   }, [profile, numericMovieId]);
+
+  useEffect(() => {
+    if (loading || reviews.length === 0) return;
+
+    const params = new URLSearchParams(window.location.search);
+    let targetReviewId = params.get('review');
+    
+    const sessionTarget = sessionStorage.getItem('scrollToReview');
+    if (sessionTarget) {
+      targetReviewId = sessionTarget;
+      sessionStorage.removeItem('scrollToReview');
+    }
+
+    if (targetReviewId) {
+      setTimeout(() => {
+        const reviewWrapper = document.getElementById(`review-${targetReviewId}`);
+        if (reviewWrapper?.firstElementChild) {
+          reviewWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const cardElement = reviewWrapper.firstElementChild;
+          const originalTransition = cardElement.style.transition;
+          cardElement.style.transition = 'all 0.4s ease';
+          cardElement.style.borderColor = '#ef4444';
+          cardElement.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.25)';
+          cardElement.style.transform = 'scale(1.02)';
+          
+          setTimeout(() => {
+            cardElement.style.borderColor = '';
+            cardElement.style.boxShadow = '';
+            cardElement.style.transform = '';
+            setTimeout(() => { cardElement.style.transition = originalTransition; }, 400);
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, [loading, reviews]);
 
   const handleShare = async () => {
     const url = new URL(window.location.href);
@@ -267,16 +629,12 @@ export default function MovieDetailModal({ movieId, onClose }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy link:', err);
+      console.error(err);
     }
   };
 
   const handleSelectMovie = (newMovieId) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('movie', newMovieId.toString());
-    url.searchParams.delete('review');
-    window.history.pushState({}, '', url);
-    window.dispatchEvent(new Event('popstate'));
+    setNestedMovieId(newMovieId);
   };
 
   const toggleWatchlist = async () => {
@@ -327,27 +685,22 @@ export default function MovieDetailModal({ movieId, onClose }) {
     if (isFavorited) {
       updatedFavs = currentFavs.filter((m) => m.tmdb_movie_id !== numericMovieId);
     } else {
-      if (currentFavs.length >= 4) {
-        alert('You can only have 4 favorite films.');
-        return;
-      }
+      if (currentFavs.length >= 4) return alert('You can only have 4 favorite films.');
       updatedFavs = [...currentFavs, { tmdb_movie_id: numericMovieId, title: movie?.title || '', poster_path: movie?.poster_path || '' }];
     }
 
-    setSavingFavorite(true);
     try {
       await supabase.from('profiles').update({ favorite_movies: updatedFavs }).eq('id', user.id);
       setIsFavorited(!isFavorited);
       await refreshProfile();
-    } finally {
-      setSavingFavorite(false);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return;
-    if (!reviewText.trim()) return;
+    if (!user || !reviewText.trim()) return;
 
     setSubmitting(true);
     try {
@@ -356,12 +709,11 @@ export default function MovieDetailModal({ movieId, onClose }) {
           .from('reviews')
           .update({ rating: parseFloat(rating), review_text: reviewText, contains_spoilers: containsSpoilers })
           .eq('id', editingReviewId)
-          .select('*, profiles(username, avatar_url), review_likes(user_id)')
+          .select('*, profiles(username, avatar_url), review_likes(user_id), review_replies(count)')
           .single();
 
         if (error) throw error;
         if (data) setReviews((prev) => prev.map((r) => (r.id === editingReviewId ? data : r)));
-        
         setEditingReviewId(null);
       } else {
         const { data, error } = await supabase
@@ -375,7 +727,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
             review_text: reviewText,
             contains_spoilers: containsSpoilers
           })
-          .select('*, profiles(username, avatar_url), review_likes(user_id)')
+          .select('*, profiles(username, avatar_url), review_likes(user_id), review_replies(count)')
           .single();
 
         if (error) throw error;
@@ -389,7 +741,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
       setReviewText('');
       setContainsSpoilers(false);
       setIsReviewModalOpen(false);
-      
     } catch (err) {
       alert(err.message || 'Failed to submit review');
     } finally {
@@ -400,9 +751,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const handleDeleteReview = async (reviewId) => {
     if (!reviewId) return;
     const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
-    if (!error) {
-      setReviews((prev) => prev.filter((r) => String(r.id) !== String(reviewId)));
-    }
+    if (!error) setReviews((prev) => prev.filter((r) => String(r.id) !== String(reviewId)));
   };
 
   const handleEditReview = (review) => {
@@ -415,9 +764,14 @@ export default function MovieDetailModal({ movieId, onClose }) {
 
   const sortedReviews = useMemo(() => {
     const arr = [...reviews];
-    if (reviewSort === 'highest') return arr.sort((a, b) => b.rating - a.rating);
-    if (reviewSort === 'lowest') return arr.sort((a, b) => a.rating - b.rating);
-    return arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    switch (reviewSort) {
+      case 'highest': return arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      case 'lowest': return arr.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+      case 'most_liked': return arr.sort((a, b) => (b.review_likes?.length || 0) - (a.review_likes?.length || 0));
+      case 'most_discussed': return arr.sort((a, b) => (b.review_replies?.[0]?.count || 0) - (a.review_replies?.[0]?.count || 0));
+      case 'newest':
+      default: return arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
   }, [reviews, reviewSort]);
 
   if (!movieId) return null;
@@ -440,21 +794,19 @@ export default function MovieDetailModal({ movieId, onClose }) {
   const youtubeTrailers = videos.filter((v) => v.site === 'YouTube' && v.type === 'Trailer');
   const trailer = youtubeTrailers[0] || videos.find((v) => v.site === 'YouTube' && v.type === 'Teaser');
 
+  const computedZIndex = 1000 + stackLevel * 50;
+
   return (
-    <div onClick={onClose} className={styles.backdrop}>
+    <div onClick={onClose} className={styles.backdrop} style={{ zIndex: computedZIndex }}>
       <div ref={modalContentRef} onClick={(e) => e.stopPropagation()} className={styles.modal}>
         
-        {/* Full Viewable Backdrop / Skeleton Backdrop */}
         {loading || !movie ? (
           <div className={`${styles.backdropImage} skeleton-box`} style={{ opacity: 0.15 }} />
         ) : backdropSrc ? (
           <div className={styles.backdropImage} style={{ backgroundImage: `url(${backdropSrc})` }} />
         ) : null}
 
-        {/* Global Vignette Gradient - Only render when loaded */}
-        {!loading && movie && (
-          <div className={styles.vignetteOverlay} />
-        )}
+        {!loading && movie && <div className={styles.vignetteOverlay} />}
 
         <div className={styles.topControls}>
           {copied && (
@@ -472,7 +824,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
         </div>
 
         <div className={styles.contentWrapper}>
-          {/* Smooth high-fidelity skeleton strictly locked to grid */}
           {loading || !movie ? (
             <div className={styles.hero}>
               <div className={styles.leftCol}>
@@ -516,7 +867,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
           ) : (
             <>
               <div className={styles.hero}>
-                {/* Left/Top Column: Poster, Actions, and Watch Providers */}
                 <div className={styles.leftCol}>
                   <img src={posterSrc} alt={movie.title} className={styles.poster} />
                   
@@ -538,7 +888,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
                     )}
                   </div>
 
-                  {/* Moved Watch Providers inside the left column so it matches button width natively */}
                   {(streamProviders.length > 0 || uniqueRentBuy.length > 0) && (
                     <div className={styles.watchProvidersCard}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.1rem' }}>
@@ -593,18 +942,14 @@ export default function MovieDetailModal({ movieId, onClose }) {
                   )}
                 </div>
 
-                {/* Right Column: Title, Metadata & Overview */}
                 <div className={styles.rightCol}>
-                  
                   <div className={styles.heroHeader}>
                     <h1 className={styles.movieTitle}>{movie.title}</h1>
                     <p className={styles.releaseYearMobile}>{movie.release_date?.split('-')[0]}</p>
                   </div>
                   
                   <div className={styles.heroBody}>
-                    {movie.tagline && (
-                      <p className={styles.tagline}>{movie.tagline}</p>
-                    )}
+                    {movie.tagline && <p className={styles.tagline}>{movie.tagline}</p>}
 
                     <div className={styles.genrePills}>
                       {movie.genres?.map((g) => (
@@ -669,7 +1014,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
                 </div>
               </div>
 
-              {/* Carousels */}
               {topCast.length > 0 && (
                 <div style={{ marginTop: '3.5rem' }}>
                   <span className={styles.sectionHeading}>Top Cast</span>
@@ -707,7 +1051,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
 
               <hr style={{ borderColor: '#1f1f1f', margin: '3.5rem 0' }} />
 
-              {/* Community Reviews with Sorting Dropdown */}
               <div style={{ width: '100%', paddingBottom: '3rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
@@ -725,6 +1068,8 @@ export default function MovieDetailModal({ movieId, onClose }) {
                         <option value="newest">Newest First</option>
                         <option value="highest">Highest Rated</option>
                         <option value="lowest">Lowest Rated</option>
+                        <option value="most_liked">Most Liked</option>
+                        <option value="most_discussed">Most Discussed</option>
                       </select>
                       <ChevronDown size={14} className={styles.selectIcon} />
                     </div>
@@ -743,6 +1088,7 @@ export default function MovieDetailModal({ movieId, onClose }) {
                           onEdit={user?.id === rev.user_id ? handleEditReview : undefined}
                           showMoviePoster={false}
                           onCloseModal={onClose}
+                          onOpenReplies={() => setActiveReplyReview(rev)}
                         />
                       </div>
                     ))}
@@ -753,11 +1099,10 @@ export default function MovieDetailModal({ movieId, onClose }) {
           )}
         </div>
 
-        {/* --- Log/Review Sub-Modal --- */}
         {isReviewModalOpen && (
           <div className={styles.subModalBackdrop} onClick={() => {
             setIsReviewModalOpen(false);
-            if(editingReviewId) {
+            if (editingReviewId) {
               setEditingReviewId(null);
               setReviewText('');
               setRating(4.0);
@@ -771,7 +1116,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
                 </button>
               </div>
 
-              {/* Toggles for logging interaction */}
               <div className={styles.logTogglesRow}>
                 <button onClick={toggleWatched} className={`${styles.logToggleBtn} ${isWatched ? styles.activeEye : ''}`}>
                   <Eye size={18} fill={isWatched ? 'currentColor' : 'none'} />
@@ -838,7 +1182,6 @@ export default function MovieDetailModal({ movieId, onClose }) {
           </div>
         )}
 
-        {/* Existing Overlays */}
         {isPlayingTrailer && trailer && (
           <div onClick={() => setIsPlayingTrailer(false)} className={styles.trailerBackdrop}>
             <div onClick={(e) => e.stopPropagation()} className={styles.trailerBox}>
@@ -853,8 +1196,36 @@ export default function MovieDetailModal({ movieId, onClose }) {
           </div>
         )}
 
-        {selectedPersonId && <PersonDetailModal personId={selectedPersonId} onClose={() => setSelectedPersonId(null)} onSelectMovie={handleSelectMovie} />}
-        {selectedCompanyId && <CompanyDetailModal companyId={selectedCompanyId} onClose={() => setSelectedCompanyId(null)} onSelectMovie={handleSelectMovie} />}
+        {selectedPersonId && (
+          <PersonDetailModal 
+            personId={selectedPersonId} 
+            onClose={() => setSelectedPersonId(null)} 
+            onSelectMovie={handleSelectMovie} 
+          />
+        )}
+        
+        {selectedCompanyId && (
+          <CompanyDetailModal 
+            companyId={selectedCompanyId} 
+            onClose={() => setSelectedCompanyId(null)} 
+            onSelectMovie={handleSelectMovie} 
+          />
+        )}
+
+        {nestedMovieId && (
+          <MovieDetailModal
+            movieId={nestedMovieId}
+            onClose={() => setNestedMovieId(null)}
+            stackLevel={stackLevel + 1}
+          />
+        )}
+
+        {activeReplyReview && (
+          <RepliesOverlay 
+            review={activeReplyReview} 
+            onClose={() => setActiveReplyReview(null)} 
+          />
+        )}
       </div>
     </div>
   );

@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useSearchParams, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import MovieDetailModal from './components/MovieDetailModal';
 import AuthModal from './components/AuthModal';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import LegalPrivacy from './pages/LegalPrivacy';
+import TermsOfService from './pages/TermsOfService';
 import SearchBrowseModal from './components/SearchBrowseModal';
 import ReviewCard from './components/ReviewCard';
 import SkeletonGrid from './components/SkeletonGrid';
+import AdminPanel from './components/Admin/AdminPanel';
 import { supabase } from './supabaseClient';
 import {
   getTrendingMoviesWeek,
@@ -21,6 +27,14 @@ import { Star, Search, Flame, Film, Clock, MessageSquareQuote, Bookmark } from '
 import PublicProfilePage from './pages/PublicProfilePage';
 import styles from './App.module.css';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
   if (!movie) return null;
 
@@ -32,9 +46,9 @@ function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
           alt={movie.title || 'Poster'}
           className={styles.poster}
         />
-
         {onToggleWatchlist && (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onToggleWatchlist(movie);
@@ -49,7 +63,6 @@ function MovieCard({ movie, onSelect, isWatchlisted, onToggleWatchlist }) {
 
       <div className={styles.cardBody}>
         <h3 className={styles.cardTitle}>{movie.title || 'Untitled'}</h3>
-
         <div className={styles.cardMeta}>
           <span>{movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
           <span className={styles.ratingBadge}>
@@ -72,6 +85,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let isSubscribed = true;
     async function loadWatchlist() {
       if (!user) {
         setWatchlistIds(new Set());
@@ -84,7 +98,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
           .eq('user_id', user.id)
           .or('type.eq.watchlist,type.is.null');
 
-        if (data) {
+        if (isSubscribed && data) {
           setWatchlistIds(new Set(data.map((item) => Number(item.tmdb_movie_id))));
         }
       } catch (err) {
@@ -92,25 +106,29 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
       }
     }
     loadWatchlist();
+    return () => { isSubscribed = false; };
   }, [user]);
 
   useEffect(() => {
-    async function loadCommunityReviews() {
+    let isSubscribed = true;
+    async function loadReviews() {
       try {
         const { data } = await supabase
           .from('reviews')
           .select('*, profiles(username, avatar_url), review_likes(user_id)')
           .order('created_at', { ascending: false })
           .limit(6);
-        setRecentReviews(data || []);
+        if (isSubscribed) setRecentReviews(data || []);
       } catch (err) {
-        console.error('Failed to load community reviews:', err);
+        console.error('Failed to load reviews:', err);
       }
     }
-    loadCommunityReviews();
+    loadReviews();
+    return () => { isSubscribed = false; };
   }, []);
 
   useEffect(() => {
+    let isSubscribed = true;
     const loadFeed = async () => {
       setLoading(true);
       setError('');
@@ -125,16 +143,19 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
         }
 
         const data = await fetcher();
-        setMovies(Array.isArray(data) ? data : []);
+        if (isSubscribed) {
+          setMovies(Array.isArray(data) ? data : []);
+        }
       } catch (err) {
         console.error(err);
-        setError('Failed to load films for this feed');
+        if (isSubscribed) setError('Failed to load films for this feed');
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     };
 
     loadFeed();
+    return () => { isSubscribed = false; };
   }, [activeFeed]);
 
   const handleToggleWatchlist = async (movie) => {
@@ -205,6 +226,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveFeed(tab.id)}
                 className={`${styles.tabButton} ${isActive ? styles.tabButtonActive : ''}`}
               >
@@ -215,7 +237,6 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
           })}
         </div>
 
-        {/* This search input stays for desktop, hidden on mobile */}
         <div onClick={onOpenSearch} className={styles.searchContainer}>
           <input
             type="text"
@@ -228,11 +249,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
       </div>
 
       {loading && <SkeletonGrid count={18} minWidth="185px" />}
-      
-      {error && (
-        <p className={`${styles.messageText} ${styles.errorText}`}>{error}</p>
-      )}
-      
+      {error && <p className={`${styles.messageText} ${styles.errorText}`}>{error}</p>}
       {!loading && !error && movies.length === 0 && (
         <p className={`${styles.messageText} ${styles.emptyText}`}>No matching films found.</p>
       )}
@@ -255,9 +272,7 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
         <div className={styles.reviewsSection}>
           <div className={styles.reviewsHeader}>
             <MessageSquareQuote size={16} color="#737373" />
-            <span className={styles.reviewsTitle}>
-              Recent Community Reviews
-            </span>
+            <span className={styles.reviewsTitle}>Recent Community Reviews</span>
           </div>
 
           <div className={styles.reviewsGrid}>
@@ -279,19 +294,19 @@ function HomeFeed({ onSelectMovie, onOpenAuth, onOpenSearch }) {
 
 function MainLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, initialMode: 'signin' });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const selectedMovieId = searchParams.get('movie');
+  const isAppRoute = !location.pathname.startsWith('/admin');
 
   const handleSelectMovie = (id, reviewId = null) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('movie', id.toString());
-      if (reviewId) {
-        next.set('review', reviewId.toString());
-      } else {
-        next.delete('review');
-      }
+      if (reviewId) next.set('review', reviewId.toString());
+      else next.delete('review');
       return next;
     });
   };
@@ -305,27 +320,33 @@ function MainLayout() {
     });
   };
 
-  const handleOpenAuth = (mode = 'signin') => {
-    setAuthModalConfig({ isOpen: true, initialMode: mode });
-  };
-
-  const handleCloseAuth = () => {
-    setAuthModalConfig((prev) => ({ ...prev, isOpen: false }));
-  };
+  const handleOpenAuth = (mode = 'signin') => setAuthModalConfig({ isOpen: true, initialMode: mode });
+  const handleCloseAuth = () => setAuthModalConfig((prev) => ({ ...prev, isOpen: false }));
 
   return (
     <div className={styles.appContainer}>
-      <Navbar onOpenAuth={handleOpenAuth} onOpenSearch={() => setIsSearchOpen(true)} />
-      <Routes>
-        <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} onOpenAuth={handleOpenAuth} onOpenSearch={() => setIsSearchOpen(true)} />} />
-        <Route path="/search" element={<SearchPage onSelectMovie={handleSelectMovie} />} />
-        <Route path="/profile" element={<ProfilePage onSelectMovie={handleSelectMovie} />} />
-        <Route path="/user/:username" element={<PublicProfilePage onSelectMovie={handleSelectMovie} />} />
-      </Routes>
-      
+      <ScrollToTop />
+      {isAppRoute && <Navbar onOpenAuth={handleOpenAuth} onOpenSearch={() => setIsSearchOpen(true)} />}
+
+      <div className={isAppRoute ? styles.mainContentWrap : ''}>
+        <Routes>
+          <Route path="/" element={<HomeFeed onSelectMovie={handleSelectMovie} onOpenAuth={handleOpenAuth} onOpenSearch={() => setIsSearchOpen(true)} />} />
+          <Route path="/search" element={<SearchPage onSelectMovie={handleSelectMovie} />} />
+          <Route path="/profile" element={<ProfilePage onSelectMovie={handleSelectMovie} />} />
+          <Route path="/user/:username" element={<PublicProfilePage onSelectMovie={handleSelectMovie} />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/privacy" element={<LegalPrivacy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/admin" element={<AdminPanel />} />
+        </Routes>
+      </div>
+
+      {isAppRoute && <Footer />}
+
       <MovieDetailModal movieId={selectedMovieId} onClose={handleCloseMovie} />
       <SearchBrowseModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-      
+
       {authModalConfig.isOpen && (
         <AuthModal
           isOpen={authModalConfig.isOpen}

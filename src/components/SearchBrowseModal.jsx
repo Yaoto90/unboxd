@@ -25,18 +25,10 @@ const RATING_OPTIONS = [
 ];
 
 const GENRES = [
-  { id: '28', name: 'Action' },
-  { id: '12', name: 'Adventure' },
-  { id: '16', name: 'Animation' },
-  { id: '35', name: 'Comedy' },
-  { id: '80', name: 'Crime' },
-  { id: '99', name: 'Documentary' },
-  { id: '18', name: 'Drama' },
-  { id: '14', name: 'Fantasy' },
-  { id: '27', name: 'Horror' },
-  { id: '9648', name: 'Mystery' },
-  { id: '10749', name: 'Romance' },
-  { id: '878', name: 'Sci-Fi' },
+  { id: '28', name: 'Action' }, { id: '12', name: 'Adventure' }, { id: '16', name: 'Animation' },
+  { id: '35', name: 'Comedy' }, { id: '80', name: 'Crime' }, { id: '99', name: 'Documentary' },
+  { id: '18', name: 'Drama' }, { id: '14', name: 'Fantasy' }, { id: '27', name: 'Horror' },
+  { id: '9648', name: 'Mystery' }, { id: '10749', name: 'Romance' }, { id: '878', name: 'Sci-Fi' },
   { id: '53', name: 'Thriller' }
 ];
 
@@ -64,27 +56,19 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
   const decadeContainerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Background scroll lock logic
   useEffect(() => {
-    if (isOpen) {
-      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-      document.body.dataset.modalLockCount = currentCount + 1;
-      document.body.style.overflow = 'hidden';
-    }
+    if (!isOpen) return;
+    const count = parseInt(document.body.dataset.modalLockCount || '0', 10);
+    document.body.dataset.modalLockCount = count + 1;
+    document.body.style.overflow = 'hidden';
     
     return () => {
-      if (isOpen) {
-        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-        const nextCount = Math.max(0, currentCount - 1);
-        document.body.dataset.modalLockCount = nextCount;
-        if (nextCount === 0) {
-          document.body.style.overflow = '';
-        }
-      }
+      const nextCount = Math.max(0, parseInt(document.body.dataset.modalLockCount || '0', 10) - 1);
+      document.body.dataset.modalLockCount = nextCount;
+      if (nextCount === 0) document.body.style.overflow = '';
     };
   }, [isOpen]);
 
-  // Sync state whenever modal opens to reflect current URL filters
   useEffect(() => {
     if (!isOpen) return;
 
@@ -96,11 +80,7 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
     const urlRating = searchParams.get('rating');
     const urlGenres = searchParams.get('genres');
 
-    if (urlType === 'search') {
-      setQuery(urlValue || '');
-    } else {
-      setQuery('');
-    }
+    setQuery(urlType === 'search' ? urlValue || '' : '');
 
     if (urlDecade) {
       setSelectedEra({ type: 'decade', value: urlDecade, label: `${urlDecade}s Cinema` });
@@ -121,9 +101,7 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
         setOpenDecadeId(null);
       }
     };
-    if (openDecadeId) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    if (openDecadeId) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDecadeId]);
 
@@ -180,8 +158,8 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
     const q = query.trim();
+    if (!q) return;
     onClose();
     navigate(`/search?type=search&value=${encodeURIComponent(q)}&label=${encodeURIComponent(`Search: "${q}"`)}&page=1`);
   };
@@ -198,7 +176,6 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
             <Sparkles size={16} color="#ffffff" />
             <span className={styles.headerTitle}>Discover Films</span>
           </div>
-
           <button onClick={onClose} aria-label="Close" className={styles.closeBtn}>
             <X size={15} />
           </button>
@@ -220,7 +197,6 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </form>
 
-        {/* RELEASE ERA */}
         <div style={{ marginBottom: '1.4rem' }} ref={decadeContainerRef}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -251,7 +227,7 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
                     <ChevronDown
                       size={12}
                       style={{
-                        transform: isOpenMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transform: isOpenMenu ? 'rotate(180deg)' : 'none',
                         transition: 'transform 0.15s ease'
                       }}
                     />
@@ -302,7 +278,6 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* POPULARITY */}
         <div style={{ marginBottom: '1.4rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.6rem' }}>
             <Flame size={13} color="#ffffff" />
@@ -321,7 +296,6 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* CRITICAL ACCLAIM */}
         <div style={{ marginBottom: '1.4rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.6rem' }}>
             <Star size={13} color="#ffffff" />
@@ -340,7 +314,6 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* GENRES */}
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -366,7 +339,6 @@ export default function SearchBrowseModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Footer Actions */}
         <div className={styles.footer}>
           <button
             type="button"

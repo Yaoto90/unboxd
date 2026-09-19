@@ -1,0 +1,134 @@
+.aboutContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  color: #ffffff;
+}
+
+.heroSection {
+  text-align: center;
+  margin-bottom: 5rem;
+}
+
+.heroIcon {
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.4));
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #a3a3a3;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 5rem;
+}
+
+.glassCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.glassCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.cardIcon {
+  margin-bottom: 1rem;
+}
+
+.glassCard h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.8rem;
+}
+
+.glassCard p {
+  color: #a3a3a3;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.missionSection {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 16px;
+  padding: 3rem;
+  text-align: center;
+}
+
+.missionSection h2 {
+  font-size: 1.8rem;
+  margin: 0 0 1rem;
+  color: #ef4444;
+}
+
+.missionSection p {
+  font-size: 1.05rem;
+  color: #d4d4d4;
+  line-height: 1.7;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.contactDetailsRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.contactPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.contactPill:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .aboutContainer {
+    padding: 2rem 1.25rem;
+  }
+  .title {
+    font-size: 2.2rem;
+  }
+  .missionSection {
+    padding: 2rem 1.5rem;
+  }
+}

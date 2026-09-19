@@ -5,25 +5,19 @@ import SkeletonGrid from './SkeletonGrid';
 import styles from './CSS/CompanyDetailModal.module.css';
 
 const GENRE_MAP = {
-  28: 'Action',
-  12: 'Adventure',
-  16: 'Animation',
-  35: 'Comedy',
-  80: 'Crime',
-  99: 'Documentary',
-  18: 'Drama',
-  10751: 'Family',
-  14: 'Fantasy',
-  36: 'History',
-  27: 'Horror',
-  10402: 'Music',
-  9648: 'Mystery',
-  10749: 'Romance',
-  878: 'Sci-Fi',
-  10770: 'TV Movie',
-  53: 'Thriller',
-  10752: 'War',
-  37: 'Western'
+  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+  99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+  27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+  10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
+};
+
+const SORT_LABELS = {
+  popularity: 'Popularity',
+  rating: 'Rating',
+  votes: 'Total Votes',
+  'release-new': 'Release (Newest)',
+  'release-old': 'Release (Oldest)',
+  title: 'Film Title (A–Z)'
 };
 
 function CompanyMovieCard({ film, onSelect }) {
@@ -106,23 +100,16 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
   const genreRef = useRef(null);
   const sortRef = useRef(null);
 
-  // Background scroll lock logic
   useEffect(() => {
-    if (companyId) {
-      const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-      document.body.dataset.modalLockCount = currentCount + 1;
-      document.body.style.overflow = 'hidden';
-    }
-    
+    if (!companyId) return;
+    const count = parseInt(document.body.dataset.modalLockCount || '0', 10);
+    document.body.dataset.modalLockCount = count + 1;
+    document.body.style.overflow = 'hidden';
+
     return () => {
-      if (companyId) {
-        const currentCount = parseInt(document.body.dataset.modalLockCount || '0', 10);
-        const nextCount = Math.max(0, currentCount - 1);
-        document.body.dataset.modalLockCount = nextCount;
-        if (nextCount === 0) {
-          document.body.style.overflow = '';
-        }
-      }
+      const next = Math.max(0, parseInt(document.body.dataset.modalLockCount || '0', 10) - 1);
+      document.body.dataset.modalLockCount = next;
+      if (next === 0) document.body.style.overflow = '';
     };
   }, [companyId]);
 
@@ -143,27 +130,23 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
     if (!companyId) return;
 
     let isMounted = true;
-    async function loadCompanyData() {
-      setLoading(true);
-      setError(null);
-      try {
-        const [compData, filmsData] = await Promise.all([
-          getCompanyDetails(companyId),
-          getCompanyMovies(companyId)
-        ]);
+    setLoading(true);
+    setError(null);
+
+    Promise.all([getCompanyDetails(companyId), getCompanyMovies(companyId)])
+      .then(([compData, filmsData]) => {
         if (isMounted) {
           setCompany(compData);
-          setFilms(filmsData);
+          setFilms(filmsData || []);
         }
-      } catch (err) {
-        console.error('Failed to load company data:', err);
+      })
+      .catch((err) => {
+        console.error(err);
         if (isMounted) setError(err.message || 'Failed to load studio details');
-      } finally {
+      })
+      .finally(() => {
         if (isMounted) setLoading(false);
-      }
-    }
-
-    loadCompanyData();
+      });
 
     return () => {
       isMounted = false;
@@ -173,13 +156,12 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
   const decadeGroups = useMemo(() => {
     const map = new Map();
     films.forEach((film) => {
-      if (film.release_date) {
-        const yr = parseInt(film.release_date.split('-')[0], 10);
-        if (!isNaN(yr)) {
-          const dec = Math.floor(yr / 10) * 10;
-          if (!map.has(dec)) map.set(dec, new Set());
-          map.get(dec).add(yr);
-        }
+      if (!film.release_date) return;
+      const yr = parseInt(film.release_date.split('-')[0], 10);
+      if (!isNaN(yr)) {
+        const dec = Math.floor(yr / 10) * 10;
+        if (!map.has(dec)) map.set(dec, new Set());
+        map.get(dec).add(yr);
       }
     });
 
@@ -194,9 +176,7 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
   const availableGenres = useMemo(() => {
     const genreIds = new Set();
     films.forEach((film) => {
-      if (Array.isArray(film.genre_ids)) {
-        film.genre_ids.forEach((gid) => genreIds.add(gid));
-      }
+      if (Array.isArray(film.genre_ids)) film.genre_ids.forEach((gid) => genreIds.add(gid));
     });
     return Array.from(genreIds)
       .filter((gid) => GENRE_MAP[gid])
@@ -209,53 +189,29 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
 
     if (eraFilter.type === 'decade') {
       const dec = parseInt(eraFilter.value, 10);
-      result = result.filter((film) => {
-        if (!film.release_date) return false;
-        const yr = parseInt(film.release_date.split('-')[0], 10);
-        return Math.floor(yr / 10) * 10 === dec;
-      });
+      result = result.filter((f) => f.release_date && Math.floor(parseInt(f.release_date.split('-')[0], 10) / 10) * 10 === dec);
     } else if (eraFilter.type === 'year') {
       const yr = parseInt(eraFilter.value, 10);
-      result = result.filter((film) => {
-        if (!film.release_date) return false;
-        return parseInt(film.release_date.split('-')[0], 10) === yr;
-      });
+      result = result.filter((f) => f.release_date && parseInt(f.release_date.split('-')[0], 10) === yr);
     }
 
     if (selectedGenre !== 'all') {
       const targetGenreId = parseInt(selectedGenre, 10);
-      result = result.filter((film) => Array.isArray(film.genre_ids) && film.genre_ids.includes(targetGenreId));
+      result = result.filter((f) => Array.isArray(f.genre_ids) && f.genre_ids.includes(targetGenreId));
     }
 
     result.sort((a, b) => {
       if (sortBy === 'popularity') return (b.popularity || 0) - (a.popularity || 0);
       if (sortBy === 'rating') return (b.vote_average || 0) - (a.vote_average || 0);
       if (sortBy === 'votes') return (b.vote_count || 0) - (a.vote_count || 0);
-      if (sortBy === 'release-new') {
-        const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
-        const dateB = b.release_date ? new Date(b.release_date).getTime() : 0;
-        return dateB - dateA;
-      }
-      if (sortBy === 'release-old') {
-        const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
-        const dateB = b.release_date ? new Date(b.release_date).getTime() : 0;
-        return dateA - dateB;
-      }
+      if (sortBy === 'release-new') return new Date(b.release_date || 0) - new Date(a.release_date || 0);
+      if (sortBy === 'release-old') return new Date(a.release_date || 0) - new Date(b.release_date || 0);
       if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
       return 0;
     });
 
     return result;
   }, [films, eraFilter, selectedGenre, sortBy]);
-
-  const sortLabels = {
-    popularity: 'Popularity',
-    rating: 'Rating',
-    votes: 'Total Votes',
-    'release-new': 'Release (Newest)',
-    'release-old': 'Release (Oldest)',
-    title: 'Film Title (A–Z)'
-  };
 
   const isSortActive = sortBy !== 'popularity';
 
@@ -313,13 +269,10 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                   )}
                 </div>
 
-                {company.description && (
-                  <p className={styles.description}>{company.description}</p>
-                )}
+                {company.description && <p className={styles.description}>{company.description}</p>}
               </div>
             </div>
 
-            {/* Filter Bar */}
             <div className={styles.filterBar}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em' }}>
@@ -331,12 +284,10 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
-                {/* 1. YEAR / DECADE CASCADE FILTER */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative' }} ref={yearRef}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#737373', letterSpacing: '0.05em' }}>
                     YEAR
                   </span>
-                  
                   <button
                     type="button"
                     onClick={() => setIsYearMenuOpen(!isYearMenuOpen)}
@@ -370,9 +321,7 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                           setHoveredDecade(null);
                         }}
                         className={styles.dropdownItem}
-                        style={{
-                          background: eraFilter.type === 'all' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'
-                        }}
+                        style={{ background: eraFilter.type === 'all' ? 'rgba(255, 255, 255, 0.12)' : 'transparent' }}
                       >
                         All Years
                       </button>
@@ -406,17 +355,8 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                               <ChevronDown size={11} style={{ transform: 'rotate(-90deg)', opacity: 0.7 }} />
                             </button>
 
-                            {/* Flyout Submenu */}
                             {isHovered && (
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  top: '-15px',
-                                  left: '100%',
-                                  padding: '15px 0 15px 6px',
-                                  zIndex: 140
-                                }}
-                              >
+                              <div style={{ position: 'absolute', top: '-15px', left: '100%', padding: '15px 0 15px 6px', zIndex: 140 }}>
                                 <div
                                   style={{
                                     background: '#0d0d0d',
@@ -496,7 +436,6 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                   )}
                 </div>
 
-                {/* 2. GENRE FILTER */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative' }} ref={genreRef}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#737373', letterSpacing: '0.05em' }}>GENRE</span>
                   <button
@@ -529,9 +468,7 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                           setIsGenreMenuOpen(false);
                         }}
                         className={styles.dropdownItem}
-                        style={{
-                          background: selectedGenre === 'all' ? 'rgba(255, 255, 255, 0.12)' : 'transparent'
-                        }}
+                        style={{ background: selectedGenre === 'all' ? 'rgba(255, 255, 255, 0.12)' : 'transparent' }}
                       >
                         All Genres
                       </button>
@@ -545,9 +482,7 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                             setIsGenreMenuOpen(false);
                           }}
                           className={styles.dropdownItem}
-                          style={{
-                            background: String(g.id) === selectedGenre ? 'rgba(255, 255, 255, 0.12)' : 'transparent'
-                          }}
+                          style={{ background: String(g.id) === selectedGenre ? 'rgba(255, 255, 255, 0.12)' : 'transparent' }}
                         >
                           {g.name}
                         </button>
@@ -556,7 +491,6 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                   )}
                 </div>
 
-                {/* 3. SORT BY */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative' }} ref={sortRef}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#737373', letterSpacing: '0.05em' }}>SORT BY</span>
                   <button
@@ -576,13 +510,13 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                       cursor: 'pointer'
                     }}
                   >
-                    <span>{sortLabels[sortBy] || 'Sort'}</span>
+                    <span>{SORT_LABELS[sortBy] || 'Sort'}</span>
                     <ChevronDown size={13} style={{ transform: isSortMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
                   </button>
 
                   {isSortMenuOpen && (
                     <div className={styles.dropdownMenu} style={{ right: 0, left: 'auto', minWidth: '160px' }}>
-                      {Object.entries(sortLabels).map(([key, label]) => (
+                      {Object.entries(SORT_LABELS).map(([key, label]) => (
                         <button
                           key={key}
                           type="button"
@@ -591,9 +525,7 @@ export default function CompanyDetailModal({ companyId, onClose, onSelectMovie }
                             setIsSortMenuOpen(false);
                           }}
                           className={styles.dropdownItem}
-                          style={{
-                            background: sortBy === key ? 'rgba(255, 255, 255, 0.12)' : 'transparent'
-                          }}
+                          style={{ background: sortBy === key ? 'rgba(255, 255, 255, 0.12)' : 'transparent' }}
                         >
                           {label}
                         </button>
