@@ -287,3 +287,172 @@
   font-size: 0.8rem;
   color: #737373;
 }
+
+/* ------------------------------------------------------------------ */
+/* Mobile layout                                                       */
+/* ------------------------------------------------------------------ */
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-height: 0;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border: none;
+    border-radius: 0;
+    padding: calc(0.75rem + env(safe-area-inset-top, 0px)) 1rem calc(2rem + env(safe-area-inset-bottom, 0px));
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Stays in flow and pins to the top while the sheet scrolls */
+  .closeBtn {
+    position: sticky;
+    top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    right: auto;
+    width: 38px;
+    height: 38px;
+    margin: 0 0 0.75rem auto;
+    background: rgba(10, 10, 10, 0.75);
+  }
+
+  /* Hero: photo beside name + meta, biography full width below */
+  .heroRow {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 0.4rem 1rem;
+    align-items: start;
+    margin-bottom: 1.5rem;
+  }
+
+  .photoWrap {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 110px;
+    height: 150px;
+    border-radius: 10px;
+  }
+
+  .infoCol {
+    display: contents;
+  }
+
+  .personName {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    margin: 0;
+    font-size: 1.6rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .metaRow {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+  }
+
+  .metaBadge svg,
+  .metaItem svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .biography {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-height: 150px;
+  }
+
+  /* Filters: one row per filter so dropdowns always open inside the screen */
+  .filterBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    margin-bottom: 1.25rem;
+  }
+
+  .filterGroup {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    width: 100%;
+  }
+
+  .filterLabel {
+    min-width: 62px;
+  }
+
+  .filterTrigger {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+  }
+
+  .dropdownItem {
+    padding: 9px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Decade flyout buttons (inline-styled in the JSX) */
+  .dropdownMenu > div > div > div > button {
+    padding: 9px 10px !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Film grid */
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .cardBody {
+    padding: 0.5rem;
+  }
+
+  .cardTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .cardMeta {
+    font-size: 0.7rem;
+  }
+
+  .cardMeta svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Loading skeleton: shrink the photo placeholder to match the mobile hero */
+  .modal > div > div:first-child > :global(.skeleton-box) {
+    width: 110px !important;
+    height: 150px !important;
+    flex-shrink: 0;
+  }
+}

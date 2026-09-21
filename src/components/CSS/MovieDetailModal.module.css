@@ -921,7 +921,7 @@
     max-height: 100dvh;
     border-radius: 0;
     border: none;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .backdropImage {
@@ -1041,6 +1041,35 @@
   .castCard,
   .recCard {
     scroll-snap-align: start;
+  }
+
+  /* Recommended Films: show 3 cards at a time, swipe for more */
+  .recsTrack {
+    gap: 0.5rem;
+  }
+
+  /* Card size and text are inline-styled in the JSX, so !important is needed */
+  .recCard {
+    min-width: calc((100% - 1rem) / 3) !important;
+    max-width: calc((100% - 1rem) / 3) !important;
+  }
+
+  .recCard > div:last-child {
+    padding: 0.5rem !important;
+  }
+
+  .recCard h4 {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  .recCard > div:last-child > div {
+    font-size: 0.7rem !important;
+  }
+
+  .recCard svg {
+    width: 10px;
+    height: 10px;
   }
 
   .reviewsGrid {
