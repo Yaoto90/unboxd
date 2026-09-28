@@ -62,7 +62,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin' }) {
           options: { data: { user_name: cleanUsername } }
         });
         if (error) throw error;
-        alert('Account created! Check your email if confirmation is required.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
